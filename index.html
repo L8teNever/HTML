@@ -3298,6 +3298,74 @@
         #capture-modal-btn-export:hover {
             background: var(--accent-2) !important;
         }
+
+        /* ---- Capture modal skeleton loader ---- */
+        #capture-skeleton {
+            position: absolute;
+            inset: 0;
+            z-index: 20;
+            background: var(--bg-0);
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 32px;
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 0.35s ease;
+        }
+
+        #capture-skeleton.fade-out {
+            opacity: 0;
+        }
+
+        .cap-skel-wrap {
+            width: 100%;
+            max-width: 1200px;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.65);
+            display: flex;
+            min-height: 420px;
+        }
+
+        .cap-skel-half {
+            flex: 1;
+            background: #1e1e1e;
+            padding: 28px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .cap-skel-half.cap-skel-light {
+            background: #f5f5f5;
+            border-left: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .cap-skel-line {
+            border-radius: 4px;
+            height: 12px;
+            background: linear-gradient(90deg,
+                rgba(255, 255, 255, 0.04) 25%,
+                rgba(255, 255, 255, 0.13) 50%,
+                rgba(255, 255, 255, 0.04) 75%);
+            background-size: 400% 100%;
+            animation: capSkelShimmer 1.5s ease-in-out infinite;
+        }
+
+        .cap-skel-half.cap-skel-light .cap-skel-line {
+            background: linear-gradient(90deg,
+                rgba(0, 0, 0, 0.05) 25%,
+                rgba(0, 0, 0, 0.14) 50%,
+                rgba(0, 0, 0, 0.05) 75%);
+            background-size: 400% 100%;
+            animation: capSkelShimmer 1.5s ease-in-out infinite;
+        }
+
+        @keyframes capSkelShimmer {
+            0%   { background-position: 100% 0; }
+            100% { background-position: -100% 0; }
+        }
     </style>
 </head>
 
@@ -11336,6 +11404,52 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
 
             // Re-apply preview scaling factor to fit the container
             adjustPreviewScale();
+
+            // ---- Skeleton: overlay while iframes load ----
+            const _skelContainer = document.getElementById('capture-preview-container');
+            const _prevSkel = document.getElementById('capture-skeleton');
+            if (_prevSkel) _prevSkel.remove();
+
+            const _iframes = card.querySelectorAll('iframe');
+            if (_iframes.length > 0) {
+                // Build skeleton HTML matching the chosen layout
+                const _widths = [80, 65, 72, 55, 78, 60, 70, 50, 75, 58, 68, 63];
+                const _mkLines = (n, light) => _widths.slice(0, n).map(w =>
+                    `<div class="cap-skel-line${light ? '' : ''}" style="width:${w}%"></div>`
+                ).join('');
+
+                let _halves = '';
+                if (layout !== 'preview')
+                    _halves += `<div class="cap-skel-half">${_mkLines(12, false)}</div>`;
+                if (layout !== 'code')
+                    _halves += `<div class="cap-skel-half cap-skel-light">${_mkLines(8, true)}</div>`;
+
+                const _skel = document.createElement('div');
+                _skel.id = 'capture-skeleton';
+                _skel.innerHTML = `<div class="cap-skel-wrap">${_halves}</div>`;
+                _skelContainer.appendChild(_skel);
+
+                const _hideSkel = (() => {
+                    let _done = 0;
+                    return () => {
+                        if (++_done >= _iframes.length) {
+                            _skel.classList.add('fade-out');
+                            setTimeout(() => { if (_skel.parentNode) _skel.remove(); }, 380);
+                        }
+                    };
+                })();
+
+                _iframes.forEach(f => f.addEventListener('load', _hideSkel, { once: true }));
+
+                // Fallback: hide after 5 s even if load never fires
+                setTimeout(() => {
+                    if (_skel.parentNode) {
+                        _skel.classList.add('fade-out');
+                        setTimeout(() => { if (_skel.parentNode) _skel.remove(); }, 380);
+                    }
+                }, 5000);
+            }
+            // ---- end skeleton ----
         }
 
         async function handleCaptureSnapshot() {
