@@ -72,7 +72,7 @@
             --radius: 3px;
             --radius-sm: 3px;
             --radius-xs: 2px;
-            --radius-pill: 3px;
+            --radius-pill: 999px;
         }
 
         * {
@@ -3312,6 +3312,20 @@
             cursor: pointer;
             border: none;
         }
+
+        /* Capture modal — hover states (replaces inline onmouseover/onmouseout) */
+        #capture-modal-close:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+        }
+
+        #capture-modal-btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        #capture-modal-btn-export:hover {
+            background: var(--accent-2) !important;
+        }
     </style>
 </head>
 
@@ -3378,7 +3392,7 @@
         <div class="activity-bar" id="activity-bar">
             <div class="act-top">
                 <!-- Home -->
-                <button class="act-btn" id="act-home" data-tip="Startseite" data-tip-pos="right">
+                <button class="act-btn" id="act-home" data-tip="Startseite" data-tip-pos="right" aria-label="Startseite">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
                         stroke-linejoin="round">
                         <path d="M3 12L12 3l9 9" />
@@ -3386,7 +3400,7 @@
                     </svg>
                 </button>
                 <!-- Suche -->
-                <button class="act-btn" id="act-search" data-tip="Suche" data-tip-pos="right">
+                <button class="act-btn" id="act-search" data-tip="Suche" data-tip-pos="right" aria-label="Suche">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
                         stroke-linejoin="round">
                         <circle cx="11" cy="11" r="8" />
@@ -3394,7 +3408,7 @@
                     </svg>
                 </button>
                 <!-- File Explorer -->
-                <button class="act-btn active" id="act-explorer" data-tip="Explorer" data-tip-pos="right">
+                <button class="act-btn active" id="act-explorer" data-tip="Explorer" data-tip-pos="right" aria-label="Explorer">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
                         stroke-linejoin="round">
                         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
@@ -3403,7 +3417,7 @@
                     </svg>
                 </button>
                 <!-- HTML Preview Toggle -->
-                <button class="act-btn active" id="act-preview" data-tip="Vorschau ein/ausblenden" data-tip-pos="right">
+                <button class="act-btn active" id="act-preview" data-tip="Vorschau ein/ausblenden" data-tip-pos="right" aria-label="Vorschau ein/ausblenden">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
                         stroke-linejoin="round">
                         <rect x="2" y="3" width="20" height="18" rx="2" />
@@ -3412,7 +3426,7 @@
                     </svg>
                 </button>
                 <!-- Capture Snapshot -->
-                <button class="act-btn" id="act-capture" data-tip="Screenshot erstellen" data-tip-pos="right">
+                <button class="act-btn" id="act-capture" data-tip="Screenshot erstellen" data-tip-pos="right" aria-label="Screenshot erstellen">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
                         stroke-linejoin="round">
                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
@@ -3422,7 +3436,7 @@
             </div>
             <div class="act-bottom">
                 <!-- Settings -->
-                <button class="act-btn" id="act-settings" data-tip="Einstellungen" data-tip-pos="right">
+                <button class="act-btn" id="act-settings" data-tip="Einstellungen" data-tip-pos="right" aria-label="Einstellungen">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
                         stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3" />
@@ -3443,7 +3457,7 @@
                     <span>Explorer</span>
                     <div class="head-actions">
                         <!-- Neue Datei -->
-                        <button class="new" id="btn-newfile-hdr" data-tip="Neue Datei" data-tip-pos="bottom-left">
+                        <button class="new" id="btn-newfile-hdr" data-tip="Neue Datei" data-tip-pos="bottom-left" aria-label="Neue Datei">
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
                                 stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M2.5 1.5h7L13.5 5v9.5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1z" />
@@ -3452,7 +3466,7 @@
                             </svg>
                         </button>
                         <!-- Neuer Ordner -->
-                        <button class="new" id="btn-newfolder-hdr" data-tip="Neuer Ordner" data-tip-pos="bottom-left">
+                        <button class="new" id="btn-newfolder-hdr" data-tip="Neuer Ordner" data-tip-pos="bottom-left" aria-label="Neuer Ordner">
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
                                 stroke-linecap="round" stroke-linejoin="round">
                                 <path
@@ -3462,7 +3476,7 @@
                         </button>
                         <!-- Dateien importieren -->
                         <button class="new" id="btn-import-files-hdr" data-tip="Dateien importieren"
-                            data-tip-pos="bottom-left">
+                            data-tip-pos="bottom-left" aria-label="Dateien importieren">
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
                                 stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M2.5 1.5h7L13.5 5v9.5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1z" />
@@ -3472,7 +3486,7 @@
                         </button>
                         <!-- Ordner importieren -->
                         <button class="new" id="btn-import-folder-hdr" data-tip="Ordner importieren"
-                            data-tip-pos="bottom-left">
+                            data-tip-pos="bottom-left" aria-label="Ordner importieren">
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
                                 stroke-linecap="round" stroke-linejoin="round">
                                 <path
@@ -3482,7 +3496,7 @@
                         </button>
                         <!-- ZIP importieren -->
                         <button class="new" id="btn-import-zip-hdr" data-tip="ZIP importieren"
-                            data-tip-pos="bottom-left">
+                            data-tip-pos="bottom-left" aria-label="ZIP importieren">
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
                                 stroke-linecap="round" stroke-linejoin="round">
                                 <path
@@ -3491,7 +3505,7 @@
                             </svg>
                         </button>
                         <!-- Synchronisieren -->
-                        <button class="new" id="btn-sync-hdr" data-tip="Synchronisieren" data-tip-pos="bottom-left">
+                        <button class="new" id="btn-sync-hdr" data-tip="Synchronisieren" data-tip-pos="bottom-left" aria-label="Synchronisieren">
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
                                 stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M1.5 8a6.5 6.5 0 0 1 10.4-5.2M14.5 8a6.5 6.5 0 0 1-10.4 5.2" />
@@ -3512,7 +3526,7 @@
                     <span class="es-label" id="es-project-label">WORKSPACE</span>
                     <div class="es-actions">
                         <!-- Neue Datei -->
-                        <button class="new" id="btn-newfile-sec" data-tip="Neue Datei" data-tip-pos="bottom-left">
+                        <button class="new" id="btn-newfile-sec" data-tip="Neue Datei" data-tip-pos="bottom-left" aria-label="Neue Datei">
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
                                 stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M2.5 1.5h7L13.5 5v9.5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1z" />
@@ -3521,7 +3535,7 @@
                             </svg>
                         </button>
                         <!-- Neuer Ordner -->
-                        <button class="new" id="btn-newfolder-sec" data-tip="Neuer Ordner" data-tip-pos="bottom-left">
+                        <button class="new" id="btn-newfolder-sec" data-tip="Neuer Ordner" data-tip-pos="bottom-left" aria-label="Neuer Ordner">
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
                                 stroke-linecap="round" stroke-linejoin="round">
                                 <path
@@ -3531,7 +3545,7 @@
                         </button>
                         <!-- Dateien importieren -->
                         <button class="new" id="btn-import-files-sec" data-tip="Dateien importieren"
-                            data-tip-pos="bottom-left">
+                            data-tip-pos="bottom-left" aria-label="Dateien importieren">
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
                                 stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M2.5 1.5h7L13.5 5v9.5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1z" />
@@ -3541,7 +3555,7 @@
                         </button>
                         <!-- Ordner importieren -->
                         <button class="new" id="btn-import-folder-sec" data-tip="Ordner importieren"
-                            data-tip-pos="bottom-left">
+                            data-tip-pos="bottom-left" aria-label="Ordner importieren">
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
                                 stroke-linecap="round" stroke-linejoin="round">
                                 <path
@@ -3551,7 +3565,7 @@
                         </button>
                         <!-- ZIP importieren -->
                         <button class="new" id="btn-import-zip-sec" data-tip="ZIP importieren"
-                            data-tip-pos="bottom-left">
+                            data-tip-pos="bottom-left" aria-label="ZIP importieren">
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
                                 stroke-linecap="round" stroke-linejoin="round">
                                 <path
@@ -3560,7 +3574,7 @@
                             </svg>
                         </button>
                         <!-- Synchronisieren -->
-                        <button class="new" id="btn-sync-sec" data-tip="Synchronisieren" data-tip-pos="bottom-left">
+                        <button class="new" id="btn-sync-sec" data-tip="Synchronisieren" data-tip-pos="bottom-left" aria-label="Synchronisieren">
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
                                 stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M1.5 8a6.5 6.5 0 0 1 10.4-5.2M14.5 8a6.5 6.5 0 0 1-10.4 5.2" />
@@ -3594,11 +3608,11 @@
                             <!-- Optionen als eigene Reihe darunter -->
                             <div class="sp-options">
                                 <button class="sp-opt" id="sp-btn-case" data-tip="Groß-/Kleinschreibung beachten"
-                                    data-tip-pos="bottom"><span>Aa</span></button>
+                                    data-tip-pos="bottom" aria-label="Groß-/Kleinschreibung beachten" aria-pressed="false"><span>Aa</span></button>
                                 <button class="sp-opt" id="sp-btn-word" data-tip="Nur ganzes Wort"
-                                    data-tip-pos="bottom"><span style="font-style:italic">ab</span></button>
+                                    data-tip-pos="bottom" aria-label="Nur ganzes Wort" aria-pressed="false"><span style="font-style:italic">ab</span></button>
                                 <button class="sp-opt" id="sp-btn-regex" data-tip="Regulärer Ausdruck"
-                                    data-tip-pos="bottom"><span>.*</span></button>
+                                    data-tip-pos="bottom" aria-label="Regulärer Ausdruck" aria-pressed="false"><span>.*</span></button>
                             </div>
                         </div>
                         <!-- Ersetzen -->
@@ -3669,7 +3683,7 @@
                 <!-- Preview-rail removed; toggle now lives in tabs-wrap -->
                 <div class="tabs-wrap" id="tabs-wrap">
                     <button class="sidebar-rail" id="btn-expand" data-tip="Seitenleiste einblenden"
-                        data-tip-pos="right">
+                        data-tip-pos="right" aria-label="Seitenleiste einblenden">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"
                             stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(180deg)">
                             <path d="M6 3l5 5-5 5" />
@@ -3677,7 +3691,7 @@
                     </button>
                     <div class="tabs" id="tabs"></div>
                     <button class="preview-toggle-btn" id="btn-preview-expand" data-tip="Vorschau ein/ausblenden"
-                        data-tip-pos="left" style="display:none">
+                        data-tip-pos="left" aria-label="Vorschau ein/ausblenden" style="display:none">
                         <span class="arr">
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"
                                 stroke-linecap="round" stroke-linejoin="round">
@@ -4024,16 +4038,16 @@
 
     <!-- ============= DATENSCHUTZERKLÄRUNG MODAL ============= -->
     <div id="privacy-modal-bg">
-        <div id="privacy-modal">
+        <div id="privacy-modal" role="dialog" aria-modal="true" aria-labelledby="privacy-modal-title">
             <div id="privacy-modal-head">
-                <h2>
+                <h2 id="privacy-modal-title">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                     </svg>
                     Datenschutzerklärung – CLEO Editor
                 </h2>
-                <button id="privacy-modal-close" onclick="hidePrivacyModal()">&times;</button>
+                <button id="privacy-modal-close" onclick="hidePrivacyModal()" aria-label="Schließen">&times;</button>
             </div>
             <div id="privacy-modal-body">
 
@@ -4983,7 +4997,7 @@
 
     <!-- ============= NEW FILE MODAL ============= -->
     <div class="modal-bg" id="modal-bg">
-        <div class="modal">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
             <div class="modal-head">
                 <div class="ic" id="modal-icon">
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
@@ -5011,7 +5025,7 @@
     <!-- ============= SCREENSHOT DESIGNER MODAL ============= -->
     <div class="modal-bg" id="capture-modal"
         style="display: none; justify-content: center; align-items: center; z-index: 100000;">
-        <div
+        <div role="dialog" aria-modal="true" aria-label="Screenshot Designer"
             style="background: var(--bg-1); border: 1px solid var(--line-2); border-radius: 16px; width: 90vw; max-width: 1200px; height: 85vh; display: flex; flex-direction: column; box-shadow: 0 24px 48px rgba(0,0,0,0.5); overflow: hidden; color: var(--text);">
             <!-- Modal Header -->
             <div
@@ -5025,10 +5039,8 @@
                     <span style="font-weight: 700; font-size: 14px; letter-spacing: 0.05em; text-transform: uppercase;"
                         data-i18n="captureModalTitle">Screenshot Designer & Sharing-Vorschau</span>
                 </div>
-                <button id="capture-modal-close"
-                    style="background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 6px; transition: all 0.15s ease;"
-                    onmouseover="this.style.background='rgba(255,255,255,0.06)'; this.style.color='var(--text)'"
-                    onmouseout="this.style.background='none'; this.style.color='var(--text-dim)'">&times;</button>
+                <button id="capture-modal-close" aria-label="Schließen"
+                    style="background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 6px; transition: all 0.15s ease;">&times;</button>
             </div>
             <!-- Modal Body -->
             <div style="flex: 1; display: flex; overflow: hidden; min-height: 0; background: var(--bg-0);">
@@ -5159,12 +5171,9 @@
                 style="height: 60px; border-top: 1px solid var(--line-2); display: flex; justify-content: flex-end; align-items: center; padding: 0 24px; gap: 12px; flex-shrink: 0; background: var(--bg-1);">
                 <button id="capture-modal-btn-cancel"
                     style="background: none; border: 1px solid var(--line-2); color: var(--text); padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 12.5px; font-weight: 600; transition: all 0.15s;"
-                    onmouseover="this.style.background='rgba(255,255,255,0.05)'"
-                    onmouseout="this.style.background='none'" data-i18n="captureClose">Schließen</button>
+                    data-i18n="captureClose">Schließen</button>
                 <button id="capture-modal-btn-export"
-                    style="background: var(--accent); border: none; color: #ffffff; padding: 8px 22px; border-radius: 6px; cursor: pointer; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0, 122, 204, 0.3); transition: all 0.15s;"
-                    onmouseover="this.style.background='var(--accent-2)'"
-                    onmouseout="this.style.background='var(--accent)'">
+                    style="background: var(--accent); border: none; color: #ffffff; padding: 8px 22px; border-radius: 6px; cursor: pointer; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0, 122, 204, 0.3); transition: all 0.15s;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
                         stroke-linejoin="round" style="width: 14px; height: 14px;">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
