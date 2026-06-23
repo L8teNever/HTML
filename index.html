@@ -3366,6 +3366,197 @@
             0%   { background-position: 100% 0; }
             100% { background-position: -100% 0; }
         }
+
+        /* ===== SCREENSHOT DESIGNER REDESIGN ===== */
+        .cap-collapsible-section {
+            border-bottom: 1px solid var(--line-2);
+            margin-bottom: 8px;
+        }
+        .cap-collapsible-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .cap-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 4px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+        .cap-section-header:hover .cap-section-title {
+            color: var(--text);
+        }
+        .cap-section-title {
+            margin: 0;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-mute);
+            letter-spacing: 0.08em;
+            transition: color 0.15s ease;
+        }
+        .cap-chevron {
+            color: var(--text-mute);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
+        }
+        .cap-section-header:hover .cap-chevron {
+            color: var(--text);
+        }
+        .cap-section-content {
+            max-height: 500px;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding-bottom 0.3s ease, opacity 0.2s ease;
+            padding: 0 4px 12px 4px;
+            opacity: 1;
+            box-sizing: border-box;
+        }
+        .cap-collapsible-section.collapsed .cap-section-content {
+            max-height: 0 !important;
+            padding-bottom: 0 !important;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .cap-collapsible-section.collapsed .cap-chevron {
+            transform: rotate(-90deg);
+        }
+        .cap-collapsible-section:not(.collapsed) .cap-chevron {
+            transform: rotate(0deg);
+        }
+        .cap-swatch-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        .cap-swatch-btn {
+            height: 38px;
+            border-radius: 8px;
+            border: 2px solid var(--line-2);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            outline: none;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+        }
+        .cap-swatch-btn:hover {
+            transform: scale(1.08);
+            border-color: var(--text-dim) !important;
+            z-index: 2;
+        }
+        .cap-swatch-btn.active {
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent), inset 0 0 0 1px rgba(255,255,255,0.15);
+            transform: scale(1.04);
+            z-index: 2;
+        }
+        .cap-swatch-btn.active::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: bold;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+        .cap-swatch-btn[data-value="solid-light"].active::after {
+            color: #1e1e1e;
+            text-shadow: none;
+        }
+        .cap-segmented-control {
+            display: flex;
+            background: var(--bg-0);
+            padding: 3px;
+            border-radius: 8px;
+            border: 1px solid var(--line-2);
+        }
+        .cap-segment-btn {
+            flex: 1;
+            padding: 6px 4px;
+            border: none;
+            background: transparent;
+            color: var(--text-dim);
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            outline: none;
+        }
+        .cap-segment-btn:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .cap-segment-btn.active {
+            background: var(--accent) !important;
+            color: #ffffff !important;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+        }
+        /* Custom file rows in screenshot dialog */
+        .cap-file-item {
+            background: var(--bg-0);
+            border: 1px solid var(--line-2);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+            transition: all 0.15s ease;
+        }
+        .cap-file-item:hover {
+            border-color: var(--line);
+            background: color-mix(in srgb, var(--bg-0) 93%, var(--accent));
+        }
+        .cap-badge {
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .cap-badge.active {
+            background: rgba(0, 122, 204, 0.15);
+            color: var(--accent);
+            border: 1px solid rgba(0, 122, 204, 0.2);
+        }
+        .cap-badge.linked {
+            background: rgba(197, 134, 192, 0.15);
+            color: var(--pink);
+            border: 1px solid rgba(197, 134, 192, 0.2);
+        }
+        /* Custom modern toggle pill check */
+        .cap-pill-check {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            background: var(--bg-1);
+            border: 1px solid var(--line-2);
+            color: var(--text-mute);
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.15s ease;
+        }
+        .cap-pill-check:hover {
+            background: var(--bg-2);
+            color: var(--text-dim);
+            border-color: var(--line);
+        }
+        .cap-pill-check.checked {
+            background: rgba(0, 122, 204, 0.12);
+            border-color: var(--accent);
+            color: var(--accent-lime);
+        }
+        .cap-pill-check input {
+            display: none;
+        }
     </style>
 </head>
 
@@ -5087,114 +5278,185 @@
                     </div>
                 </div>
                 <!-- Right: Customization Settings Panel -->
+                <!-- Right: Customization Settings Panel -->
                 <div
-                    style="width: 320px; border-left: 1px solid var(--line-2); background: var(--bg-2); padding: 24px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; flex-shrink: 0; box-sizing: border-box;">
-                    <h3 style="margin: 0; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-mute); letter-spacing: 0.12em;"
-                        data-i18n="captureCustomize">Design anpassen</h3>
-
-                    <!-- Background Style Select -->
-                    <div style="display: flex; flex-direction: column; gap: 6px;">
-                        <label style="font-size: 12px; font-weight: 600; color: var(--text);"
-                            data-i18n="captureBgStyle">Hintergrund-Stil</label>
-                        <select class="settings-select" id="cap-opt-bg">
-                            <option value="gradient-dark" data-i18n="captureOptBgGradientDark">Cyber Deep (Dark
-                                Gradient)</option>
-                            <option value="gradient-sunset" data-i18n="captureOptBgGradientSunset">Sunset Glow
-                                (Orange/Red)</option>
-                            <option value="gradient-ocean" data-i18n="captureOptBgGradientOcean">Ocean Breeze
-                                (Teal/Blue)</option>
-                            <option value="gradient-aurora" data-i18n="captureOptBgGradientAurora">Aurora Glow
-                                (Green/Purple)</option>
-                            <option value="solid-dark" data-i18n="captureOptBgSolidDark">Einfarbig Dunkel (#1e1e1e)
-                            </option>
-                            <option value="solid-light" data-i18n="captureOptBgSolidLight">Einfarbig Hell (#f3f4f6)
-                            </option>
-                            <option value="transparent" data-i18n="captureOptBgTransparent" selected>Transparent
-                            </option>
-                        </select>
-                    </div>
-
-                    <!-- Layout Select -->
-                    <div style="display: flex; flex-direction: column; gap: 6px;">
-                        <label style="font-size: 12px; font-weight: 600; color: var(--text);"
-                            data-i18n="captureLayout">Fenster-Anordnung</label>
-                        <select class="settings-select" id="cap-opt-layout">
-                            <option value="split" data-i18n="captureOptLayoutSplit" selected>Nebeneinander (Code &
-                                Vorschau)</option>
-                            <option value="code" data-i18n="captureOptLayoutCode">Nur Code-Editor</option>
-                            <option value="preview" data-i18n="captureOptLayoutPreview">Nur Live-Vorschau</option>
-                        </select>
-                    </div>
-
-                    <!-- Window Padding Select -->
-                    <div style="display: flex; flex-direction: column; gap: 6px;">
-                        <label style="font-size: 12px; font-weight: 600; color: var(--text);"
-                            data-i18n="capturePadding">Rahmen-Abstand (Padding)</label>
-                        <select class="settings-select" id="cap-opt-padding">
-                            <option value="0" data-i18n="captureOptPaddingNone" selected>Kein (0px)</option>
-                            <option value="24" data-i18n="captureOptPaddingCompact">Kompakt (24px)</option>
-                            <option value="48" data-i18n="captureOptPaddingNormal">Standard (48px)</option>
-                            <option value="72" data-i18n="captureOptPaddingLarge">Großzügig (72px)</option>
-                        </select>
-                    </div>
-
-                    <!-- Code font size -->
-                    <div style="display: flex; flex-direction: column; gap: 6px;">
-                        <label style="font-size: 12px; font-weight: 600; color: var(--text);"
-                            data-i18n="captureCodeFontSize">Code Schriftgröße</label>
-                        <select class="settings-select" id="cap-opt-fontsize">
-                            <option value="11" data-i18n="captureOptFontSizeSmall">Sehr klein (11px)</option>
-                            <option value="12.5" data-i18n="captureOptFontSizeNormal" selected>Normal (12.5px)</option>
-                            <option value="14" data-i18n="captureOptFontSizeLarge">Groß (14px)</option>
-                        </select>
-                    </div>
-
-                    <!-- Header visibility toggles -->
-                    <div
-                        style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; border-top: 1px solid var(--line-2); padding-top: 14px;">
-                        <!-- Branding Header toggle -->
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <label style="font-size: 12px; font-weight: 600; color: var(--text);"
-                                data-i18n="captureOptBranding">Branding-Kopfzeile</label>
-                            <label class="md3-toggle">
-                                <input type="checkbox" id="cap-opt-branding">
-                                <span class="md3-track"></span>
-                            </label>
+                    style="width: 320px; border-left: 1px solid var(--line-2); background: var(--bg-2); padding: 16px 20px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; flex-shrink: 0; box-sizing: border-box;">
+                    
+                    <!-- SECTION 1: HINTERGRUND -->
+                    <div class="cap-collapsible-section" id="cap-sec-bg">
+                        <div class="cap-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="cap-section-title" data-i18n="captureBgStyle">Hintergrund</span>
+                                <span class="cap-header-badge" id="cap-badge-bg" style="font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.06); border-radius: 4px; color: var(--text-dim); font-weight: normal; text-transform: none; border: 1px solid var(--line-2);">Transparent</span>
+                            </div>
+                            <span class="cap-chevron">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; display: block;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </span>
                         </div>
-                        <!-- Window Titlebars toggle -->
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <label style="font-size: 12px; font-weight: 600; color: var(--text);"
-                                data-i18n="captureOptTitlebars">Fenster-Titelleisten</label>
-                            <label class="md3-toggle">
-                                <input type="checkbox" id="cap-opt-titlebars">
-                                <span class="md3-track"></span>
-                            </label>
+                        <div class="cap-section-content">
+                            <!-- Color Swatch Grid -->
+                            <div class="cap-swatch-grid">
+                                <button class="cap-swatch-btn active" data-value="transparent" title="Transparent" style="background: linear-gradient(45deg, #242424 25%, transparent 25%), linear-gradient(-45deg, #242424 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #242424 75%), linear-gradient(-45deg, transparent 75%, #242424 75%); background-size: 8px 8px; background-position: 0 0, 0 4px, 4px -4px, -4px 0; background-color: #121212;"></button>
+                                <button class="cap-swatch-btn" data-value="gradient-dark" title="Cyber Deep" style="background: linear-gradient(135deg, #0c0f1d 0%, #171b30 40%, #0d344b 80%, #0c0f1d 100%);"></button>
+                                <button class="cap-swatch-btn" data-value="gradient-sunset" title="Sunset Glow" style="background: linear-gradient(135deg, #4338ca 0%, #6d28d9 30%, #be185d 70%, #f43f5e 100%);"></button>
+                                <button class="cap-swatch-btn" data-value="gradient-ocean" title="Ocean Breeze" style="background: linear-gradient(135deg, #0f172a 0%, #0369a1 40%, #0d9488 85%, #0f172a 100%);"></button>
+                                <button class="cap-swatch-btn" data-value="gradient-aurora" title="Aurora Glow" style="background: linear-gradient(135deg, #020617 0%, #1e1b4b 50%, #064e3b 100%);"></button>
+                                <button class="cap-swatch-btn" data-value="solid-dark" title="Einfarbig Dunkel" style="background: #1e1e1e;"></button>
+                                <button class="cap-swatch-btn" data-value="solid-light" title="Einfarbig Hell" style="background: #f3f4f6; border-color: #cccccc;"></button>
+                            </div>
+                            <select class="settings-select" id="cap-opt-bg" style="display: none;">
+                                <option value="gradient-dark">Cyber Deep</option>
+                                <option value="gradient-sunset">Sunset Glow</option>
+                                <option value="gradient-ocean">Ocean Breeze</option>
+                                <option value="gradient-aurora">Aurora Glow</option>
+                                <option value="solid-dark">Einfarbig Dunkel</option>
+                                <option value="solid-light">Einfarbig Hell</option>
+                                <option value="transparent" selected>Transparent</option>
+                            </select>
                         </div>
                     </div>
 
-                    <!-- HTML Assets/References options -->
-                    <div id="cap-opt-assets-section"
-                        style="display: none; flex-direction: column; gap: 12px; border-top: 1px solid var(--line-2); padding-top: 14px;">
-                        <h4 style="margin: 0; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-mute); letter-spacing: 0.12em;"
-                            data-i18n="captureAssetsTitle">HTML Verknüpfungen</h4>
-
-                        <!-- Toggle for loading assets in preview -->
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <label style="font-size: 12px; font-weight: 600; color: var(--text);"
-                                data-i18n="captureOptLoadAssets">Verknüpfte CSS/JS laden</label>
-                            <label class="md3-toggle">
-                                <input type="checkbox" id="cap-opt-load-assets" checked>
-                                <span class="md3-track"></span>
-                            </label>
+                    <!-- SECTION 2: RAHMEN-ABSTAND -->
+                    <div class="cap-collapsible-section collapsed" id="cap-sec-padding">
+                        <div class="cap-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="cap-section-title" data-i18n="capturePadding">Abstand</span>
+                                <span class="cap-header-badge" id="cap-badge-padding" style="font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.06); border-radius: 4px; color: var(--text-dim); font-weight: normal; text-transform: none; border: 1px solid var(--line-2);">0px</span>
+                            </div>
+                            <span class="cap-chevron">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; display: block;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </span>
                         </div>
+                        <div class="cap-section-content">
+                            <div class="cap-segmented-control" data-select="cap-opt-padding">
+                                <button class="cap-segment-btn active" data-value="0">0px</button>
+                                <button class="cap-segment-btn" data-value="24">24px</button>
+                                <button class="cap-segment-btn" data-value="48">48px</button>
+                                <button class="cap-segment-btn" data-value="72">72px</button>
+                            </div>
+                            <select class="settings-select" id="cap-opt-padding" style="display: none;">
+                                <option value="0" selected>0px</option>
+                                <option value="24">24px</option>
+                                <option value="48">48px</option>
+                                <option value="72">72px</option>
+                            </select>
+                        </div>
+                    </div>
 
-                        <!-- List of checkboxes for displaying linked code -->
-                        <div style="display: flex; flex-direction: column; gap: 6px;">
-                            <label style="font-size: 12px; font-weight: 600; color: var(--text);"
-                                data-i18n="captureOptShowAssets">Code auf Bild anzeigen:</label>
-                            <div id="cap-opt-assets-list"
-                                style="display: flex; flex-direction: column; gap: 4px; padding: 6px; max-height: 240px; overflow-y: auto; border: 1px solid var(--line-2); border-radius: 8px; background: var(--bg-1); box-sizing: border-box;">
-                                <!-- Checkboxes will be populated dynamically -->
+                    <!-- SECTION 3: ANORDNUNG -->
+                    <div class="cap-collapsible-section collapsed" id="cap-sec-layout">
+                        <div class="cap-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="cap-section-title" data-i18n="captureLayout">Anordnung</span>
+                                <span class="cap-header-badge" id="cap-badge-layout" style="font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.06); border-radius: 4px; color: var(--text-dim); font-weight: normal; text-transform: none; border: 1px solid var(--line-2);">Split</span>
+                            </div>
+                            <span class="cap-chevron">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; display: block;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </span>
+                        </div>
+                        <div class="cap-section-content">
+                            <div class="cap-segmented-control" data-select="cap-opt-layout">
+                                <button class="cap-segment-btn active" data-value="split" data-i18n="captureOptLayoutSplit">Nebeneinander</button>
+                                <button class="cap-segment-btn" data-value="code" data-i18n="captureOptLayoutCode">Nur Code</button>
+                                <button class="cap-segment-btn" data-value="preview" data-i18n="captureOptLayoutPreview">Vorschau</button>
+                            </div>
+                            <select class="settings-select" id="cap-opt-layout" style="display: none;">
+                                <option value="split" selected>Split</option>
+                                <option value="code">Code</option>
+                                <option value="preview">Preview</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 4: CODE SCHRIFTGRÖSSE -->
+                    <div class="cap-collapsible-section collapsed" id="cap-sec-fontsize">
+                        <div class="cap-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="cap-section-title" data-i18n="captureCodeFontSize">Schriftgröße</span>
+                                <span class="cap-header-badge" id="cap-badge-fontsize" style="font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.06); border-radius: 4px; color: var(--text-dim); font-weight: normal; text-transform: none; border: 1px solid var(--line-2);">12.5px</span>
+                            </div>
+                            <span class="cap-chevron">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; display: block;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </span>
+                        </div>
+                        <div class="cap-section-content">
+                            <div class="cap-segmented-control" data-select="cap-opt-fontsize">
+                                <button class="cap-segment-btn" data-value="11" data-i18n="captureOptFontSizeSmall">11px</button>
+                                <button class="cap-segment-btn active" data-value="12.5" data-i18n="captureOptFontSizeNormal">12.5px</button>
+                                <button class="cap-segment-btn" data-value="14" data-i18n="captureOptFontSizeLarge">14px</button>
+                            </div>
+                            <select class="settings-select" id="cap-opt-fontsize" style="display: none;">
+                                <option value="11">11px</option>
+                                <option value="12.5" selected>12.5px</option>
+                                <option value="14">14px</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 5: DETAILS -->
+                    <div class="cap-collapsible-section collapsed" id="cap-sec-details">
+                        <div class="cap-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="cap-section-title" data-i18n="captureOptDetailsTitle">Optionen</span>
+                            </div>
+                            <span class="cap-chevron">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; display: block;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </span>
+                        </div>
+                        <div class="cap-section-content" style="display: flex; flex-direction: column; gap: 12px;">
+                            <!-- Branding Header toggle -->
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <span style="font-size: 12px; font-weight: 600; color: var(--text);" data-i18n="captureOptBranding">Branding-Kopfzeile</span>
+                                <label class="md3-toggle">
+                                    <input type="checkbox" id="cap-opt-branding">
+                                    <span class="md3-track"></span>
+                                </label>
+                            </div>
+                            <!-- Window Titlebars toggle -->
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <span style="font-size: 12px; font-weight: 600; color: var(--text);" data-i18n="captureOptTitlebars">Fenster-Titelleisten</span>
+                                <label class="md3-toggle">
+                                    <input type="checkbox" id="cap-opt-titlebars">
+                                    <span class="md3-track"></span>
+                                </label>
+                            </div>
+                            <!-- Reset positions button -->
+                            <button id="cap-btn-reset-positions"
+                                style="font-size: 11px; padding: 6px 12px; align-self: flex-start; margin-top: 12px; width: 100%; border: 1px solid var(--line-2); background: var(--bg-1); color: var(--text-dim); border-radius: 6px; cursor: pointer; transition: all 0.15s ease;"
+                                onmouseover="this.style.background='var(--bg-3)'; this.style.color='var(--text)';"
+                                onmouseout="this.style.background='var(--bg-1)'; this.style.color='var(--text-dim)';"
+                                data-i18n="captureOptResetPositions">
+                                Positionen zurücksetzen
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 6: DATEIEN & VERKNÜPFUNGEN -->
+                    <div id="cap-opt-assets-section" class="cap-collapsible-section collapsed">
+                        <div class="cap-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="cap-section-title" data-i18n="captureAssetsTitle">Dateien</span>
+                            </div>
+                            <span class="cap-chevron">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; display: block;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </span>
+                        </div>
+                        <div class="cap-section-content" style="display: flex; flex-direction: column; gap: 12px;">
+                            <!-- Toggle for loading assets in preview -->
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                                <span style="font-size: 11px; font-weight: 600; color: var(--text-dim);" data-i18n="captureOptLoadAssets">Linked CSS/JS laden</span>
+                                <label class="md3-toggle">
+                                    <input type="checkbox" id="cap-opt-load-assets" checked>
+                                    <span class="md3-track"></span>
+                                </label>
+                            </div>
+
+                            <!-- List of checkboxes for displaying linked code -->
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                <span style="font-size: 11px; font-weight: 600; color: var(--text-dim);" data-i18n="captureOptShowAssets">Dateien auf Bild anzeigen:</span>
+                                <div id="cap-opt-assets-list" style="display: flex; flex-direction: column; max-height: 260px; overflow-y: auto; padding-right: 4px; box-sizing: border-box;">
+                                    <!-- Checkboxes populated dynamically -->
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -11063,6 +11325,9 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
         let capturePreviewBody = '';
         let capturePreviewBodyClass = '';
         let capturePreviewBodyStyle = '';
+        let captureCardPositions = {};
+        let captureCardZIndices = {};
+        let maxZIndex = 100;
 
         function adjustPreviewScale() {
             const container = document.getElementById('capture-preview-container');
@@ -11255,13 +11520,15 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                     if (hasCode && hasPreview) {
                         // RENDER PAIRED CONTAINER (Code & Preview side-by-side inside the same card)
                         // Preview uses real iframe with buildPreviewDocument for pixel-identical output
+                        const pos = captureCardPositions[path] || { x: 0, y: 0 };
+                        const zIndex = captureCardZIndices[path] || 10;
                         const content = (path === activeTab) ? captureCodeContent : (files[path] || '');
                         const pClass = getPrismLangClass(path);
                         
                         rowsHtml += `
-                        <div style="display: flex; flex-direction: column; background: #ffffff; ${padding === 0 ? 'border: none; border-radius: 0; box-shadow: none;' : 'border: 1px solid rgba(0,0,0,0.1); border-radius: 14px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);'} overflow: hidden; box-sizing: border-box; ${marginTop}">
+                        <div class="cap-draggable-card" data-card-id="${path}" style="transform: translate(${pos.x}px, ${pos.y}px); z-index: ${zIndex}; cursor: grab; display: flex; flex-direction: column; background: #ffffff; ${padding === 0 ? 'border: none; border-radius: 0; box-shadow: none;' : 'border: 1px solid rgba(0,0,0,0.1); border-radius: 14px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);'} overflow: hidden; box-sizing: border-box; ${marginTop}">
                             ${showTitlebars ? `
-                            <div style="height: 38px; background: #252526; display: flex; align-items: center; padding: 0 16px; position: relative; border-bottom: 1px solid rgba(255, 255, 255, 0.05); box-sizing: border-box; flex-shrink: 0;">
+                            <div class="cap-drag-handle" style="height: 38px; background: #252526; display: flex; align-items: center; padding: 0 16px; position: relative; border-bottom: 1px solid rgba(255, 255, 255, 0.05); box-sizing: border-box; flex-shrink: 0; user-select: none;">
                                 <div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
                                     <div style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></div>
                                     <div style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></div>
@@ -11295,12 +11562,14 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                         isFirstRow = false;
                     } else if (hasCode) {
                         // Standalone Code
+                        const pos = captureCardPositions[path + '-code'] || { x: 0, y: 0 };
+                        const zIndex = captureCardZIndices[path + '-code'] || 10;
                         const content = (path === activeTab) ? captureCodeContent : (files[path] || '');
                         const pClass = getPrismLangClass(path);
                         rowsHtml += `
-                        <div style="display: flex; flex-direction: column; background: #1e1e1e; ${padding === 0 ? 'border: none; border-radius: 0; box-shadow: none;' : 'border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);'} overflow: visible; box-sizing: border-box; ${marginTop}">
+                        <div class="cap-draggable-card" data-card-id="${path}-code" style="transform: translate(${pos.x}px, ${pos.y}px); z-index: ${zIndex}; cursor: grab; display: flex; flex-direction: column; background: #1e1e1e; ${padding === 0 ? 'border: none; border-radius: 0; box-shadow: none;' : 'border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);'} overflow: visible; box-sizing: border-box; ${marginTop}">
                             ${showTitlebars ? `
-                            <div style="height: 38px; background: #252526; display: flex; align-items: center; padding: 0 16px; position: relative; border-bottom: 1px solid rgba(255, 255, 255, 0.05); box-sizing: border-box; flex-shrink: 0;">
+                            <div class="cap-drag-handle" style="height: 38px; background: #252526; display: flex; align-items: center; padding: 0 16px; position: relative; border-bottom: 1px solid rgba(255, 255, 255, 0.05); box-sizing: border-box; flex-shrink: 0; user-select: none;">
                                 <div style="display: flex; gap: 8px;">
                                     <div style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></div>
                                     <div style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></div>
@@ -11318,10 +11587,12 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                         isFirstRow = false;
                     } else if (hasPreview) {
                         // Standalone Preview — use real iframe for pixel-identical output
+                        const pos = captureCardPositions[path + '-preview'] || { x: 0, y: 0 };
+                        const zIndex = captureCardZIndices[path + '-preview'] || 10;
                         rowsHtml += `
-                        <div style="display: flex; flex-direction: column; background: #ffffff; ${padding === 0 ? 'border: none; border-radius: 0; box-shadow: none;' : 'border: 1px solid rgba(0,0,0,0.1); border-radius: 14px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);'} overflow: visible; box-sizing: border-box; ${marginTop}">
+                        <div class="cap-draggable-card" data-card-id="${path}-preview" style="transform: translate(${pos.x}px, ${pos.y}px); z-index: ${zIndex}; cursor: grab; display: flex; flex-direction: column; background: #ffffff; ${padding === 0 ? 'border: none; border-radius: 0; box-shadow: none;' : 'border: 1px solid rgba(0,0,0,0.1); border-radius: 14px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);'} overflow: visible; box-sizing: border-box; ${marginTop}">
                             ${showTitlebars ? `
-                            <div style="height: 38px; background: #f1f3f4; display: flex; align-items: center; padding: 0 16px; position: relative; border-bottom: 1px solid #e0e0e0; box-sizing: border-box; flex-shrink: 0;">
+                            <div class="cap-drag-handle" style="height: 38px; background: #f1f3f4; display: flex; align-items: center; padding: 0 16px; position: relative; border-bottom: 1px solid #e0e0e0; box-sizing: border-box; flex-shrink: 0; user-select: none;">
                                 <div style="display: flex; gap: 8px; flex-shrink: 0;">
                                     <div style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></div>
                                     <div style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></div>
@@ -11343,12 +11614,14 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                     }
                 } else if (layout === 'code') {
                     if (hasCode) {
+                        const pos = captureCardPositions[path + '-code'] || { x: 0, y: 0 };
+                        const zIndex = captureCardZIndices[path + '-code'] || 10;
                         const content = (path === activeTab) ? captureCodeContent : (files[path] || '');
                         const pClass = getPrismLangClass(path);
                         rowsHtml += `
-                        <div style="display: flex; flex-direction: column; background: #1e1e1e; ${padding === 0 ? 'border: none; border-radius: 0; box-shadow: none;' : 'border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);'} overflow: visible; box-sizing: border-box; ${marginTop}">
+                        <div class="cap-draggable-card" data-card-id="${path}-code" style="transform: translate(${pos.x}px, ${pos.y}px); z-index: ${zIndex}; cursor: grab; display: flex; flex-direction: column; background: #1e1e1e; ${padding === 0 ? 'border: none; border-radius: 0; box-shadow: none;' : 'border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);'} overflow: visible; box-sizing: border-box; ${marginTop}">
                             ${showTitlebars ? `
-                            <div style="height: 38px; background: #252526; display: flex; align-items: center; padding: 0 16px; position: relative; border-bottom: 1px solid rgba(255, 255, 255, 0.05); box-sizing: border-box; flex-shrink: 0;">
+                            <div class="cap-drag-handle" style="height: 38px; background: #252526; display: flex; align-items: center; padding: 0 16px; position: relative; border-bottom: 1px solid rgba(255, 255, 255, 0.05); box-sizing: border-box; flex-shrink: 0; user-select: none;">
                                 <div style="display: flex; gap: 8px;">
                                     <div style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></div>
                                     <div style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></div>
@@ -11368,10 +11641,12 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                 } else if (layout === 'preview') {
                     if (hasPreview) {
                         // Preview-only layout — use real iframe for pixel-identical output
+                        const pos = captureCardPositions[path + '-preview'] || { x: 0, y: 0 };
+                        const zIndex = captureCardZIndices[path + '-preview'] || 10;
                         rowsHtml += `
-                        <div style="display: flex; flex-direction: column; background: #ffffff; ${padding === 0 ? 'border: none; border-radius: 0; box-shadow: none;' : 'border: 1px solid rgba(0,0,0,0.1); border-radius: 14px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);'} overflow: visible; box-sizing: border-box; ${marginTop}">
+                        <div class="cap-draggable-card" data-card-id="${path}-preview" style="transform: translate(${pos.x}px, ${pos.y}px); z-index: ${zIndex}; cursor: grab; display: flex; flex-direction: column; background: #ffffff; ${padding === 0 ? 'border: none; border-radius: 0; box-shadow: none;' : 'border: 1px solid rgba(0,0,0,0.1); border-radius: 14px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);'} overflow: visible; box-sizing: border-box; ${marginTop}">
                             ${showTitlebars ? `
-                            <div style="height: 38px; background: #f1f3f4; display: flex; align-items: center; padding: 0 16px; position: relative; border-bottom: 1px solid #e0e0e0; box-sizing: border-box; flex-shrink: 0;">
+                            <div class="cap-drag-handle" style="height: 38px; background: #f1f3f4; display: flex; align-items: center; padding: 0 16px; position: relative; border-bottom: 1px solid #e0e0e0; box-sizing: border-box; flex-shrink: 0; user-select: none;">
                                 <div style="display: flex; gap: 8px; flex-shrink: 0;">
                                     <div style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></div>
                                     <div style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></div>
@@ -11467,6 +11742,194 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                 }, 5000);
             }
             // ---- end skeleton ----
+
+            // Initialize drag and drop behavior on window cards
+            initDraggableCards();
+        }
+
+        function initDraggableCards() {
+            const card = document.getElementById('capture-preview-card');
+            if (!card) return;
+
+            const draggables = card.querySelectorAll('.cap-draggable-card');
+            draggables.forEach(dragEl => {
+                const cardId = dragEl.dataset.cardId;
+                
+                // Allow dragging via the titlebar handle if it exists, otherwise use the whole card
+                const titlebar = dragEl.querySelector('.cap-drag-handle') || dragEl;
+                if (titlebar !== dragEl) {
+                    titlebar.style.cursor = 'grab';
+                }
+
+                const onMouseDown = (e) => {
+                    // Ignore clicks on buttons, inputs, links, labels, etc. inside the drag handle
+                    if (e.target.closest('button, input, select, a, iframe, label, .cap-badge')) return;
+                    e.preventDefault();
+
+                    // Bring dragged card to the very front using z-index
+                    maxZIndex++;
+                    captureCardZIndices[cardId] = maxZIndex;
+                    dragEl.style.zIndex = maxZIndex;
+                    dragEl.style.cursor = 'grabbing';
+                    if (titlebar !== dragEl) {
+                        titlebar.style.cursor = 'grabbing';
+                    }
+
+                    // Disable pointer-events temporarily on all iframes to prevent mouse events from getting lost
+                    const iframes = card.querySelectorAll('iframe');
+                    iframes.forEach(iframe => iframe.style.pointerEvents = 'none');
+
+                    const startX = e.clientX || (e.touches && e.touches[0].clientX);
+                    const startY = e.clientY || (e.touches && e.touches[0].clientY);
+
+                    const initialPos = captureCardPositions[cardId] || { x: 0, y: 0 };
+                    const initialX = initialPos.x;
+                    const initialY = initialPos.y;
+
+                    const onMouseMove = (moveEvt) => {
+                        const currentX = moveEvt.clientX || (moveEvt.touches && moveEvt.touches[0].clientX);
+                        const currentY = moveEvt.clientY || (moveEvt.touches && moveEvt.touches[0].clientY);
+                        
+                        const dx = currentX - startX;
+                        const dy = currentY - startY;
+
+                        const newX = initialX + dx;
+                        const newY = initialY + dy;
+
+                        captureCardPositions[cardId] = { x: newX, y: newY };
+                        dragEl.style.transform = `translate(${newX}px, ${newY}px)`;
+                    };
+
+                    const onMouseUp = () => {
+                        window.removeEventListener('mousemove', onMouseMove);
+                        window.removeEventListener('mouseup', onMouseUp);
+                        window.removeEventListener('touchmove', onMouseMove);
+                        window.removeEventListener('touchend', onMouseUp);
+
+                        dragEl.style.cursor = 'grab';
+                        if (titlebar !== dragEl) {
+                            titlebar.style.cursor = 'grab';
+                        }
+
+                        // Re-enable pointer events on iframes
+                        iframes.forEach(iframe => iframe.style.pointerEvents = 'auto');
+                    };
+
+                    window.addEventListener('mousemove', onMouseMove);
+                    window.addEventListener('mouseup', onMouseUp);
+                    window.addEventListener('touchmove', onMouseMove, { passive: false });
+                    window.addEventListener('touchend', onMouseUp);
+                };
+
+                titlebar.addEventListener('mousedown', onMouseDown);
+                titlebar.addEventListener('touchstart', onMouseDown, { passive: false });
+            });
+        }
+
+        function initCaptureControlWiring() {
+            // Background swatches
+            const swatches = document.querySelectorAll('.cap-swatch-btn');
+            const bgSelect = document.getElementById('cap-opt-bg');
+            swatches.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    swatches.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    if (bgSelect) {
+                        bgSelect.value = btn.dataset.value;
+                        bgSelect.dispatchEvent(new Event('change'));
+                        
+                        // Auto-collapse after selection
+                        const parentSec = btn.closest('.cap-collapsible-section');
+                        if (parentSec) {
+                            setTimeout(() => {
+                                parentSec.classList.add('collapsed');
+                            }, 350);
+                        }
+                    }
+                });
+            });
+
+            // Segmented controls
+            const segmentControls = document.querySelectorAll('.cap-segmented-control');
+            segmentControls.forEach(control => {
+                const selectId = control.dataset.select;
+                const selectEl = document.getElementById(selectId);
+                if (selectEl) {
+                    const buttons = control.querySelectorAll('.cap-segment-btn');
+                    buttons.forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            buttons.forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            selectEl.value = btn.dataset.value;
+                            selectEl.dispatchEvent(new Event('change'));
+                            
+                            // Auto-collapse after selection
+                            const parentSec = btn.closest('.cap-collapsible-section');
+                            if (parentSec) {
+                                setTimeout(() => {
+                                    parentSec.classList.add('collapsed');
+                                }, 350);
+                            }
+                        });
+                    });
+                }
+            });
+        }
+
+        function syncCaptureControls() {
+            // Sync background swatches
+            const bgSelect = document.getElementById('cap-opt-bg');
+            if (bgSelect) {
+                const val = bgSelect.value;
+                const swatches = document.querySelectorAll('.cap-swatch-btn');
+                swatches.forEach(btn => {
+                    if (btn.dataset.value === val) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+
+                // Update background badge
+                const badgeBg = document.getElementById('cap-badge-bg');
+                if (badgeBg) {
+                    const selectedOpt = bgSelect.options[bgSelect.selectedIndex];
+                    badgeBg.textContent = selectedOpt ? selectedOpt.text : val;
+                }
+            }
+
+            // Sync segmented controls
+            const segmentControls = document.querySelectorAll('.cap-segmented-control');
+            segmentControls.forEach(control => {
+                const selectId = control.dataset.select;
+                const selectEl = document.getElementById(selectId);
+                if (selectEl) {
+                    const val = selectEl.value;
+                    const buttons = control.querySelectorAll('.cap-segment-btn');
+                    buttons.forEach(btn => {
+                        if (btn.dataset.value === val) {
+                            btn.classList.add('active');
+                        } else {
+                            btn.classList.remove('active');
+                        }
+                    });
+
+                    // Update badges
+                    if (selectId === 'cap-opt-padding') {
+                        const badgePadding = document.getElementById('cap-badge-padding');
+                        if (badgePadding) badgePadding.textContent = val + 'px';
+                    } else if (selectId === 'cap-opt-layout') {
+                        const badgeLayout = document.getElementById('cap-badge-layout');
+                        if (badgeLayout) {
+                            const selectedOpt = selectEl.options[selectEl.selectedIndex];
+                            badgeLayout.textContent = selectedOpt ? selectedOpt.text : val;
+                        }
+                    } else if (selectId === 'cap-opt-fontsize') {
+                        const badgeFontsize = document.getElementById('cap-badge-fontsize');
+                        if (badgeFontsize) badgeFontsize.textContent = val + 'px';
+                    }
+                }
+            });
         }
 
         async function handleCaptureSnapshot() {
@@ -11550,63 +12013,105 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                         else if (isJS) icon = '⚙️';
 
                         const itemDiv = document.createElement('div');
-                        itemDiv.style.cssText = 'display: flex; flex-direction: column; gap: 4px; padding: 6px 4px; border-bottom: 1px solid var(--line-2); box-sizing: border-box;';
+                        itemDiv.className = 'cap-file-item';
 
                         // File name row
                         const nameRow = document.createElement('div');
-                        nameRow.style.cssText = 'font-family: monospace; font-size: 11px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 6px;';
+                        nameRow.style.cssText = 'font-family: monospace; font-size: 11px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 6px; justify-content: space-between;';
+                        
+                        const leftSide = document.createElement('div');
+                        leftSide.style.cssText = 'display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
                         
                         const iconSpan = document.createElement('span');
                         iconSpan.textContent = icon;
                         const pathSpan = document.createElement('span');
                         pathSpan.textContent = path;
+                        leftSide.appendChild(iconSpan);
+                        leftSide.appendChild(pathSpan);
+                        nameRow.appendChild(leftSide);
+
                         if (path === activeTab) {
                             pathSpan.style.fontWeight = 'bold';
-                            pathSpan.textContent += ' (aktiv)';
+                            const badge = document.createElement('span');
+                            badge.className = 'cap-badge active';
+                            badge.textContent = t('active') || 'aktiv';
+                            nameRow.appendChild(badge);
                         } else if (linkedAssets.has(path)) {
-                            pathSpan.style.color = 'var(--accent)';
-                            pathSpan.textContent += ' (verknüpft)';
+                            const badge = document.createElement('span');
+                            badge.className = 'cap-badge linked';
+                            badge.textContent = t('linked') || 'verknüpft';
+                            nameRow.appendChild(badge);
                         }
                         
-                        nameRow.appendChild(iconSpan);
-                        nameRow.appendChild(pathSpan);
                         itemDiv.appendChild(nameRow);
 
                         // Checkbox row
                         const cbRow = document.createElement('div');
-                        cbRow.style.cssText = 'display: flex; gap: 16px; align-items: center; margin-top: 2px; padding-left: 18px;';
+                        cbRow.style.cssText = 'display: flex; gap: 8px; align-items: center; margin-top: 8px;';
 
                         // Code checkbox
                         const codeLabel = document.createElement('label');
-                        codeLabel.style.cssText = 'display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-dim); cursor: pointer; user-select: none;';
                         const codeCheck = document.createElement('input');
                         codeCheck.type = 'checkbox';
                         codeCheck.className = 'cap-file-code-check';
                         codeCheck.dataset.path = path;
-                        // Checked if active file OR linked asset
                         codeCheck.checked = (path === activeTab || linkedAssets.has(path));
+                        
+                        codeLabel.className = 'cap-pill-check' + (codeCheck.checked ? ' checked' : '');
+                        codeLabel.appendChild(codeCheck);
+                        
+                        const codeIcon = document.createElement('span');
+                        codeIcon.innerHTML = `
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 10px; height: 10px; display: block;">
+                                <polyline points="16 18 22 12 16 6"></polyline>
+                                <polyline points="8 6 2 12 8 18"></polyline>
+                            </svg>
+                        `;
+                        codeLabel.appendChild(codeIcon);
+                        codeLabel.appendChild(document.createTextNode('Code'));
+                        
                         codeCheck.addEventListener('change', () => {
+                            if (codeCheck.checked) {
+                                codeLabel.classList.add('checked');
+                            } else {
+                                codeLabel.classList.remove('checked');
+                            }
                             renderCapturePreview();
                         });
-                        codeLabel.appendChild(codeCheck);
-                        codeLabel.appendChild(document.createTextNode('Code'));
+                        
                         cbRow.appendChild(codeLabel);
 
                         // Preview checkbox (only for HTML)
                         if (isHTML) {
                             const prevLabel = document.createElement('label');
-                            prevLabel.style.cssText = 'display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-dim); cursor: pointer; user-select: none;';
                             const prevCheck = document.createElement('input');
                             prevCheck.type = 'checkbox';
                             prevCheck.className = 'cap-file-preview-check';
                             prevCheck.dataset.path = path;
-                            // Checked by default for activeTab
                             prevCheck.checked = (path === activeTab);
+                            
+                            prevLabel.className = 'cap-pill-check' + (prevCheck.checked ? ' checked' : '');
+                            prevLabel.appendChild(prevCheck);
+                            
+                            const prevIcon = document.createElement('span');
+                            prevIcon.innerHTML = `
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 10px; height: 10px; display: block;">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            `;
+                            prevLabel.appendChild(prevIcon);
+                            prevLabel.appendChild(document.createTextNode('Vorschau'));
+                            
                             prevCheck.addEventListener('change', () => {
+                                if (prevCheck.checked) {
+                                    prevLabel.classList.add('checked');
+                                } else {
+                                    prevLabel.classList.remove('checked');
+                                }
                                 renderCapturePreview();
                             });
-                            prevLabel.appendChild(prevCheck);
-                            prevLabel.appendChild(document.createTextNode('Vorschau'));
+                            
                             cbRow.appendChild(prevLabel);
                         }
 
@@ -11618,10 +12123,24 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
 
                 // 4. Initialize dynamic designer modal events (run once)
                 if (!captureModalInited) {
-                    document.getElementById('cap-opt-bg').addEventListener('change', renderCapturePreview);
-                    document.getElementById('cap-opt-layout').addEventListener('change', renderCapturePreview);
-                    document.getElementById('cap-opt-padding').addEventListener('change', renderCapturePreview);
-                    document.getElementById('cap-opt-fontsize').addEventListener('change', renderCapturePreview);
+                    initCaptureControlWiring();
+
+                    document.getElementById('cap-opt-bg').addEventListener('change', () => {
+                        syncCaptureControls();
+                        renderCapturePreview();
+                    });
+                    document.getElementById('cap-opt-layout').addEventListener('change', () => {
+                        syncCaptureControls();
+                        renderCapturePreview();
+                    });
+                    document.getElementById('cap-opt-padding').addEventListener('change', () => {
+                        syncCaptureControls();
+                        renderCapturePreview();
+                    });
+                    document.getElementById('cap-opt-fontsize').addEventListener('change', () => {
+                        syncCaptureControls();
+                        renderCapturePreview();
+                    });
                     document.getElementById('cap-opt-branding').addEventListener('change', renderCapturePreview);
                     document.getElementById('cap-opt-titlebars').addEventListener('change', renderCapturePreview);
 
@@ -11641,9 +12160,38 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
 
                     document.getElementById('capture-modal-btn-export').addEventListener('click', triggerPNGDownload);
 
+                    const resetPosBtn = document.getElementById('cap-btn-reset-positions');
+                    if (resetPosBtn) {
+                        resetPosBtn.addEventListener('click', () => {
+                            captureCardPositions = {};
+                            captureCardZIndices = {};
+                            maxZIndex = 100;
+                            renderCapturePreview();
+                        });
+                    }
+
                     window.addEventListener('resize', adjustPreviewScale);
                     captureModalInited = true;
                 }
+
+                // Reset background style to transparent by default
+                const bgSelect = document.getElementById('cap-opt-bg');
+                if (bgSelect) {
+                    bgSelect.value = 'transparent';
+                }
+
+                // Reset section collapse states (Background open, others collapsed)
+                const sections = document.querySelectorAll('.cap-collapsible-section');
+                sections.forEach(sec => {
+                    if (sec.id === 'cap-sec-bg') {
+                        sec.classList.remove('collapsed');
+                    } else {
+                        sec.classList.add('collapsed');
+                    }
+                });
+
+                // Sync controls with current values before rendering
+                syncCaptureControls();
 
                 // 5. Render Preview and Open Modal
                 renderCapturePreview();
