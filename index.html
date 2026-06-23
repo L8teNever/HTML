@@ -8636,6 +8636,19 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
       window.addEventListener('unhandledrejection', function(ev){
         sendMsg({__codeplay:'error', message: 'Unhandled promise: ' + (ev.reason && ev.reason.message || ev.reason)});
       });
+      // Report full content height so capture-preview iframes can auto-expand
+      var _prevCapH = 0;
+      function _reportCapH() {
+        var h = Math.max(
+          document.documentElement.scrollHeight,
+          document.body ? document.body.scrollHeight : 0
+        );
+        if (h > 10 && h !== _prevCapH) { _prevCapH = h; sendMsg({__codeplay:'iframe-height', height: h}); }
+      }
+      window.addEventListener('load', function(){ setTimeout(_reportCapH, 60); });
+      if (typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(_reportCapH).observe(document.body || document.documentElement);
+      }
     })();
   `;
             (doc.body || doc.documentElement).appendChild(navScript);
@@ -8680,7 +8693,18 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
         // Listen for nav + errors from preview (both inline iframe and standalone blob popup)
         window.addEventListener('message', (e) => {
             const d = e.data;
-            if (!d || d.__codeplay !== 'navigate' && d.__codeplay !== 'error') return;
+            if (!d || !d.__codeplay) return;
+            // Auto-expand capture preview iframes to full content height
+            if (d.__codeplay === 'iframe-height') {
+                const capCard = document.getElementById('capture-preview-card');
+                if (capCard) {
+                    capCard.querySelectorAll('iframe').forEach(iframe => {
+                        try { if (iframe.contentWindow === e.source) iframe.style.height = Math.ceil(d.height) + 'px'; } catch(_) {}
+                    });
+                }
+                return;
+            }
+            if (d.__codeplay !== 'navigate' && d.__codeplay !== 'error') return;
             if (d.__codeplay === 'navigate') {
                 if (!(d.target in files)) {
                     showPreviewError(`Datei "${d.target}" existiert nicht im Projekt.`);
@@ -11753,12 +11777,12 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                                     <pre class="${pClass}" style="margin: 0; padding: 24px; flex: 1; overflow: visible; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: ${fontSize}px; line-height: 1.55; background: #1e1e1e !important; color: #d4d4d4; text-align: left; box-sizing: border-box; white-space: pre-wrap !important; word-break: break-word !important; word-wrap: break-word !important;"><code class="${pClass}" style="white-space: pre-wrap !important; word-break: break-word !important; word-wrap: break-word !important;">${escapeHtml(content)}</code></pre>
                                 </div>
                                 <!-- Preview Side -->
-                                <div style="flex: 1; display: flex; flex-direction: column; background: #ffffff; min-width: 0; box-sizing: border-box; overflow: hidden;">
+                                <div style="flex: 1; display: flex; flex-direction: column; background: #ffffff; min-width: 0; box-sizing: border-box; overflow: visible;">
                                     <iframe
                                         srcdoc="${escapeAttr(buildPreviewDocument(path, { loadAssets }))}"
                                         sandbox="allow-scripts allow-forms allow-modals allow-same-origin"
-                                        style="width: 100%; height: 100%; min-height: 420px; border: none; display: block; background: #fff;"
-                                        scrolling="yes"
+                                        style="width: 100%; height: 400px; border: none; display: block; background: #fff;"
+                                        scrolling="no"
                                     ></iframe>
                                 </div>
                             </div>
@@ -11810,8 +11834,8 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                             <iframe
                                 srcdoc="${escapeAttr(buildPreviewDocument(path, { loadAssets }))}"
                                 sandbox="allow-scripts allow-forms allow-modals allow-same-origin"
-                                style="width: 100%; min-height: 480px; border: none; display: block; background: #fff; flex: 1;"
-                                scrolling="yes"
+                                style="width: 100%; height: 400px; border: none; display: block; background: #fff;"
+                                scrolling="no"
                             ></iframe>
                         </div>
                         `;
@@ -11864,8 +11888,8 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                             <iframe
                                 srcdoc="${escapeAttr(buildPreviewDocument(path, { loadAssets }))}"
                                 sandbox="allow-scripts allow-forms allow-modals allow-same-origin"
-                                style="width: 100%; min-height: 480px; border: none; display: block; background: #fff; flex: 1;"
-                                scrolling="yes"
+                                style="width: 100%; height: 400px; border: none; display: block; background: #fff;"
+                                scrolling="no"
                             ></iframe>
                         </div>
                         `;
