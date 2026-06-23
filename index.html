@@ -8612,6 +8612,15 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
         }
         return baseParts.join('/');
       }
+      function sendMsg(msg) {
+        // In an iframe: send to the parent frame (CLEO).
+        // In a standalone popup: send to the opener tab (CLEO).
+        if (window.parent !== window) {
+          window.parent.postMessage(msg, '*');
+        } else if (window.opener) {
+          window.opener.postMessage(msg, '*');
+        }
+      }
       document.addEventListener('click', function(e){
         var a = e.target && e.target.closest && e.target.closest('a[href]');
         if (!a) return;
@@ -8619,13 +8628,13 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
         var resolved = resolveRef(CURRENT_PATH, h);
         if (!resolved) return;
         e.preventDefault();
-        parent.postMessage({__codeplay:'navigate', target: resolved}, '*');
+        sendMsg({__codeplay:'navigate', target: resolved});
       }, true);
       window.addEventListener('error', function(ev){
-        parent.postMessage({__codeplay:'error', message: ev.message, source: ev.filename, line: ev.lineno, col: ev.colno}, '*');
+        sendMsg({__codeplay:'error', message: ev.message, source: ev.filename, line: ev.lineno, col: ev.colno});
       });
       window.addEventListener('unhandledrejection', function(ev){
-        parent.postMessage({__codeplay:'error', message: 'Unhandled promise: ' + (ev.reason && ev.reason.message || ev.reason)}, '*');
+        sendMsg({__codeplay:'error', message: 'Unhandled promise: ' + (ev.reason && ev.reason.message || ev.reason)});
       });
     })();
   `;
@@ -8668,17 +8677,34 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
             return '<!doctype html>\n' + doc.documentElement.outerHTML;
         }
 
-        // Listen for nav + errors from preview
+        // Listen for nav + errors from preview (both inline iframe and standalone blob popup)
         window.addEventListener('message', (e) => {
             const d = e.data;
             if (!d || d.__codeplay !== 'navigate' && d.__codeplay !== 'error') return;
             if (d.__codeplay === 'navigate') {
-                if (d.target in files) {
+                if (!(d.target in files)) {
+                    showPreviewError(`Datei "${d.target}" existiert nicht im Projekt.`);
+                    return;
+                }
+                // Check if the message came from a standalone blob popup window
+                const blobItem = blobWindows.find(item => item.win === e.source);
+                if (blobItem) {
+                    // Navigate the popup to a fresh blob for the target file
+                    try {
+                        const html = buildPreviewDocument(d.target);
+                        const newBlob = new Blob([html], { type: 'text/html' });
+                        const newUrl = URL.createObjectURL(newBlob);
+                        URL.revokeObjectURL(blobItem.url);
+                        blobItem.url = newUrl;
+                        blobItem.win.location.replace(newUrl);
+                    } catch (err) {
+                        console.error('blob navigate failed', err);
+                    }
+                } else {
+                    // Normal inline preview navigation
                     currentPreviewPath = d.target;
                     refreshPreview(false);
                     renderFileList();
-                } else {
-                    showPreviewError(`Datei "${d.target}" existiert nicht im Projekt.`);
                 }
             }
             if (d.__codeplay === 'error') {
