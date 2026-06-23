@@ -4053,7 +4053,7 @@
             <div id="st-pos">Ln 1, Col 1</div>
             <div id="st-lang">HTML</div>
             <div>UTF-8</div>
-            <div style="color:var(--text-mute)">CLEO v1.0</div>
+            <div id="st-version" style="color:var(--text-mute)">CLEO v1.0</div>
             <button class="st-privacy-btn" id="btn-datenschutz" onclick="showPrivacyModal()"
                 data-i18n="privacy">Datenschutz</button>
             <button class="st-privacy-btn" id="btn-pwa-install"
@@ -5568,9 +5568,26 @@ console.log('App geladen ✨');
 </html>`
         };
 
+        /* ---------- URL-Version ---------- */
+        // Liest die Version aus der URL: /version/v2/ → "v2"
+        const _urlVersionMatch = window.location.pathname.match(/\/version\/([^\/]+)/i);
+        const URL_VERSION = _urlVersionMatch ? _urlVersionMatch[1] : null;
+
         /* ---------- Globaler Zustand ---------- */
-        const STORAGE_KEY = 'codeplay.files.v1';
-        const STATE_KEY = 'codeplay.state.v1';
+        // Storage-Keys sind pro URL-Version isoliert
+        const STORAGE_KEY = URL_VERSION ? `codeplay.files.${URL_VERSION}` : 'codeplay.files.v1';
+        const STATE_KEY   = URL_VERSION ? `codeplay.state.${URL_VERSION}` : 'codeplay.state.v1';
+
+        // Statusbar: zeigt URL-Version statt "CLEO v1.0"
+        (function () {
+            const el = document.getElementById('st-version');
+            if (!el) return;
+            if (URL_VERSION) {
+                el.textContent = URL_VERSION;
+                el.title = window.location.pathname;
+            }
+            // Kein URL_VERSION → bleibt "CLEO v1.0"
+        })();
 
         let files = loadFiles();           // { name: content }
         let openTabs = [];                 // array of file names
