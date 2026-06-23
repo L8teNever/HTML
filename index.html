@@ -297,34 +297,6 @@
             justify-content: center;
         }
 
-        .sidebar-rail {
-            display: none;
-            flex-shrink: 0;
-            width: 36px;
-            height: 38px;
-            border: none;
-            border-right: 1px solid var(--line);
-            background: var(--bg-1);
-            color: var(--text-mute);
-            cursor: pointer;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .sidebar-rail:hover {
-            background: var(--bg-2);
-            color: var(--accent);
-        }
-
-        .sidebar-rail svg {
-            width: 14px;
-            height: 14px;
-        }
-
-        .main.sidebar-collapsed .sidebar-rail {
-            display: flex;
-        }
 
         .editor-pane {
             position: relative;
@@ -3682,13 +3654,7 @@
             <section class="editor-pane">
                 <!-- Preview-rail removed; toggle now lives in tabs-wrap -->
                 <div class="tabs-wrap" id="tabs-wrap">
-                    <button class="sidebar-rail" id="btn-expand" data-tip="Seitenleiste einblenden"
-                        data-tip-pos="right" aria-label="Seitenleiste einblenden">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"
-                            stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(180deg)">
-                            <path d="M6 3l5 5-5 5" />
-                        </svg>
-                    </button>
+
                     <div class="tabs" id="tabs"></div>
                     <button class="preview-toggle-btn" id="btn-preview-expand" data-tip="Vorschau ein/ausblenden"
                         data-tip-pos="left" aria-label="Vorschau ein/ausblenden" style="display:none">
