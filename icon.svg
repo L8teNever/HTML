@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600">
+  <defs>
+    <style>
+      /* Keine Hintergrundfarbe (Transparent) */
+      .ambient-glow { fill: url(#glowGradient); opacity: 0.15; filter: blur(60px); }
+      
+      .gooey-layer { filter: url(#gooey-filter); }
+    </style>
+    
+    <filter id="gooey-filter">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="15" result="blur" />
+      <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 30 -14" result="goo" />
+      <feBlend in="SourceGraphic" in2="goo" />
+    </filter>
+    
+    <radialGradient id="glowGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#2dd4bf" />
+      <stop offset="100%" stop-color="#050814" stop-opacity="0" />
+    </radialGradient>
+    
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" />
+      <stop offset="100%" stop-color="#0d9488" />
+    </linearGradient>
+    
+    <linearGradient id="g2" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0f766e" />
+      <stop offset="100%" stop-color="#2dd4bf" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Canvas Background -->
+  
+  
+  <!-- Ambient Soft Aura (Centered behind blobs) -->
+  <circle class="ambient-glow" cx="300" cy="300" r="250" />
+  
+  <!-- ================================================================= -->
+  <!-- GRUPPEN-SKALIERUNG: Behält die Relationen von beiden Ebenen perfekt bei -->
+  <g transform="translate(300, 300) scale(2) translate(-300, -300)">
+    
+    <!-- EBENE 1: Organische Viskose Blobs (Unter dem Gooey Filter - Ohne weiße Ring-Overlays) -->
+    <g class="gooey-layer">
+      <!-- Blob 1 -->
+      <circle cx="265" cy="285.3" r="48" fill="url(#g1)" />
+      <!-- Blob 2 -->
+      <circle cx="335" cy="314.7" r="40" fill="url(#g2)" />
+      <!-- Center white highlights inside gooey -->
+      <circle cx="300" cy="300" r="32" fill="#ffffff" opacity="0.20" filter="blur(4px)" />
+    </g>
+
+  </g>
+  <!-- ================================================================= -->
+  
+  <!-- Unbounded Text Graphic -->
+  
+</svg>
