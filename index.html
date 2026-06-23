@@ -7860,6 +7860,8 @@ console.log('App geladen ✨');
                 captureView.style.display = 'none';
                 if (_captureTabPrevPreview === false) setPreviewCollapsed(false);
                 _captureTabPrevPreview = null;
+                const _actCapOff = document.getElementById('act-capture');
+                if (_actCapOff) _actCapOff.classList.remove('active');
             }
 
             if (name === 'Settings') {
@@ -7956,6 +7958,10 @@ console.log('App geladen ✨');
                     sidebar.classList.add('capture-active');
                     setSidebarCollapsed(false);
                 }
+                const _actCapOn = document.getElementById('act-capture');
+                if (_actCapOn) _actCapOn.classList.add('active');
+                const _actExplOff = document.getElementById('act-explorer');
+                if (_actExplOff) _actExplOff.classList.remove('active');
 
                 // Render/sync the preview
                 handleCaptureSnapshot();
@@ -8755,10 +8761,13 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
             main.classList.toggle('sidebar-collapsed', c);
             const actExplorer = document.getElementById('act-explorer');
             const actSearch = document.getElementById('act-search');
+            const actCaptureBtn = document.getElementById('act-capture');
             const sidebar = document.querySelector('aside.sidebar');
             const searchMode = sidebar && sidebar.classList.contains('search-active');
-            if (actExplorer) actExplorer.classList.toggle('active', !c && !searchMode);
+            const captureMode = sidebar && sidebar.classList.contains('capture-active');
+            if (actExplorer) actExplorer.classList.toggle('active', !c && !searchMode && !captureMode);
             if (actSearch) actSearch.classList.toggle('active', !c && !!searchMode);
+            if (actCaptureBtn) actCaptureBtn.classList.toggle('active', !c && !!captureMode);
             if (editor) editor.layout();
             setTimeout(() => { if (editor) editor.layout(); }, 30);
             setTimeout(() => { if (editor) editor.layout(); }, 310);
@@ -11149,10 +11158,16 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
             /* Run after page is fully initialised */
             setTimeout(updateProjectLabel, 800);
 
-            // Capture snapshot click listener
+            // Capture snapshot click listener — toggle: open or close Screenshot tab
             const actCapture = document.getElementById('act-capture');
             if (actCapture) {
-                actCapture.addEventListener('click', openScreenshotDesigner);
+                actCapture.addEventListener('click', function () {
+                    if (activeTab === 'Screenshot') {
+                        closeTab('Screenshot');
+                    } else {
+                        openScreenshotDesigner();
+                    }
+                });
             }
         })();
 
