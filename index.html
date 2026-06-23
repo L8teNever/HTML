@@ -8744,6 +8744,13 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
 
         /* Sidebar collapse / expand */
         function setSidebarCollapsed(c) {
+            if (c) {
+                const _sb = document.querySelector('aside.sidebar');
+                if (_sb && _sb.classList.contains('capture-active')) {
+                    _sb.classList.remove('capture-active');
+                    if (typeof closeTab === 'function' && openTabs.includes('Screenshot')) closeTab('Screenshot');
+                }
+            }
             const main = document.getElementById('main');
             main.classList.toggle('sidebar-collapsed', c);
             const actExplorer = document.getElementById('act-explorer');
@@ -11052,9 +11059,16 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                 if (btnHome) btnHome.click();
             });
 
-            /* Explorer → toggle sidebar / switch from search to files */
+            /* Explorer → toggle sidebar / switch from search/capture to files */
             actExplorer.addEventListener('click', function () {
                 const sidebar = document.querySelector('aside.sidebar');
+                const inCaptureMode = sidebar && sidebar.classList.contains('capture-active');
+                if (inCaptureMode) {
+                    sidebar.classList.remove('capture-active');
+                    if (typeof closeTab === 'function' && openTabs.includes('Screenshot')) closeTab('Screenshot');
+                    setSidebarCollapsed(false);
+                    return;
+                }
                 const inSearchMode = sidebar && sidebar.classList.contains('search-active');
                 if (inSearchMode) {
                     sidebar.classList.remove('search-active');
@@ -11166,6 +11180,11 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                 const main = document.getElementById('main');
                 const collapsed = main.classList.contains('sidebar-collapsed');
                 const inSearchMode = sidebar.classList.contains('search-active');
+                // Capture-Panel schließen wenn aktiv
+                if (sidebar.classList.contains('capture-active')) {
+                    sidebar.classList.remove('capture-active');
+                    if (typeof closeTab === 'function' && openTabs.includes('Screenshot')) closeTab('Screenshot');
+                }
                 // Bereits sichtbare Suche → einklappen
                 if (!collapsed && inSearchMode) {
                     setSidebarCollapsed(true);
