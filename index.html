@@ -11957,50 +11957,70 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
             const draggables = card.querySelectorAll('.cap-draggable-card');
             draggables.forEach(dragEl => {
                 const cardId = dragEl.dataset.cardId;
-                
-                // Allow dragging via the titlebar handle if it exists, otherwise use the whole card
-                const titlebar = dragEl.querySelector('.cap-drag-handle') || dragEl;
-                if (titlebar !== dragEl) {
-                    titlebar.style.cursor = 'grab';
+
+                // Cancel leftover inertia from previous render cycle
+                if (dragEl._inertiaRaf) {
+                    cancelAnimationFrame(dragEl._inertiaRaf);
+                    dragEl._inertiaRaf = null;
                 }
 
+                // GPU-promote the card for jank-free compositing
+                dragEl.style.willChange = 'transform';
+
+                const titlebar = dragEl.querySelector('.cap-drag-handle') || dragEl;
+                if (titlebar !== dragEl) titlebar.style.cursor = 'grab';
+
                 const onMouseDown = (e) => {
-                    // Ignore clicks on buttons, inputs, links, labels, etc. inside the drag handle
                     if (e.target.closest('button, input, select, a, iframe, label, .cap-badge')) return;
                     e.preventDefault();
 
-                    // Bring dragged card to the very front using z-index
+                    // Cancel any running inertia so we grab the card cleanly
+                    if (dragEl._inertiaRaf) {
+                        cancelAnimationFrame(dragEl._inertiaRaf);
+                        dragEl._inertiaRaf = null;
+                    }
+
                     maxZIndex++;
                     captureCardZIndices[cardId] = maxZIndex;
                     dragEl.style.zIndex = maxZIndex;
                     dragEl.style.cursor = 'grabbing';
-                    if (titlebar !== dragEl) {
-                        titlebar.style.cursor = 'grabbing';
-                    }
+                    if (titlebar !== dragEl) titlebar.style.cursor = 'grabbing';
 
-                    // Disable pointer-events temporarily on all iframes to prevent mouse events from getting lost
+                    // Apply lift scale immediately on grab
+                    const pos0 = captureCardPositions[cardId] || { x: 0, y: 0 };
+                    dragEl.style.transform = `translate(${pos0.x}px, ${pos0.y}px) scale(1.04)`;
+
                     const iframes = card.querySelectorAll('iframe');
                     iframes.forEach(iframe => iframe.style.pointerEvents = 'none');
 
-                    const startX = e.clientX || (e.touches && e.touches[0].clientX);
-                    const startY = e.clientY || (e.touches && e.touches[0].clientY);
+                    const startX = e.clientX ?? (e.touches && e.touches[0].clientX);
+                    const startY = e.clientY ?? (e.touches && e.touches[0].clientY);
+                    const initialPos = { ...(captureCardPositions[cardId] || { x: 0, y: 0 }) };
 
-                    const initialPos = captureCardPositions[cardId] || { x: 0, y: 0 };
-                    const initialX = initialPos.x;
-                    const initialY = initialPos.y;
+                    // Velocity tracking via exponential moving average
+                    let velX = 0, velY = 0;
+                    let lastX = startX, lastY = startY;
+                    let lastTime = performance.now();
 
                     const onMouseMove = (moveEvt) => {
-                        const currentX = moveEvt.clientX || (moveEvt.touches && moveEvt.touches[0].clientX);
-                        const currentY = moveEvt.clientY || (moveEvt.touches && moveEvt.touches[0].clientY);
-                        
-                        const dx = currentX - startX;
-                        const dy = currentY - startY;
+                        const currentX = moveEvt.clientX ?? (moveEvt.touches && moveEvt.touches[0].clientX);
+                        const currentY = moveEvt.clientY ?? (moveEvt.touches && moveEvt.touches[0].clientY);
+                        const now = performance.now();
+                        const dt = Math.max(now - lastTime, 1);
 
-                        const newX = initialX + dx;
-                        const newY = initialY + dy;
+                        // EMA velocity in px/frame (at 60fps base)
+                        const alpha = 0.72;
+                        velX = alpha * velX + (1 - alpha) * ((currentX - lastX) / dt * 16);
+                        velY = alpha * velY + (1 - alpha) * ((currentY - lastY) / dt * 16);
 
+                        lastX = currentX;
+                        lastY = currentY;
+                        lastTime = now;
+
+                        const newX = initialPos.x + (currentX - startX);
+                        const newY = initialPos.y + (currentY - startY);
                         captureCardPositions[cardId] = { x: newX, y: newY };
-                        dragEl.style.transform = `translate(${newX}px, ${newY}px)`;
+                        dragEl.style.transform = `translate(${newX}px, ${newY}px) scale(1.04)`;
                     };
 
                     const onMouseUp = () => {
@@ -12010,12 +12030,36 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                         window.removeEventListener('touchend', onMouseUp);
 
                         dragEl.style.cursor = 'grab';
-                        if (titlebar !== dragEl) {
-                            titlebar.style.cursor = 'grab';
-                        }
+                        if (titlebar !== dragEl) titlebar.style.cursor = 'grab';
+                        iframes.forEach(iframe => iframe.style.pointerEvents = '');
 
-                        // Re-enable pointer events on iframes
-                        iframes.forEach(iframe => iframe.style.pointerEvents = 'auto');
+                        // Momentum glide + scale spring back, both animated per-frame
+                        const friction = 0.87;
+                        const minVel = 0.35;
+                        let scaleVal = 1.04;
+
+                        const animate = () => {
+                            velX *= friction;
+                            velY *= friction;
+                            scaleVal = 1 + (scaleVal - 1) * 0.82; // spring toward 1
+
+                            const pos = captureCardPositions[cardId];
+                            const newX = pos.x + velX;
+                            const newY = pos.y + velY;
+                            captureCardPositions[cardId] = { x: newX, y: newY };
+
+                            const done = Math.abs(velX) < minVel && Math.abs(velY) < minVel && (scaleVal - 1) < 0.001;
+                            const scaleStr = done ? '' : ` scale(${scaleVal.toFixed(4)})`;
+                            dragEl.style.transform = `translate(${newX}px, ${newY}px)${scaleStr}`;
+
+                            if (done) {
+                                dragEl._inertiaRaf = null;
+                                return;
+                            }
+                            dragEl._inertiaRaf = requestAnimationFrame(animate);
+                        };
+
+                        dragEl._inertiaRaf = requestAnimationFrame(animate);
                     };
 
                     window.addEventListener('mousemove', onMouseMove);
