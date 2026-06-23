@@ -554,7 +554,7 @@
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
             z-index: 99999;
             padding: 4px 0;
-            min-width: 220px;
+            min-width: 180px;
             font-family: "Segoe UI", system-ui, sans-serif;
             font-size: 13px;
             user-select: none;
@@ -3601,6 +3601,21 @@
         .cap-pill-check input {
             display: none;
         }
+
+        /* Capture panel — layout helpers replacing inline styles */
+        .cap-header-left { display: flex; align-items: center; gap: 8px; }
+        .cap-header-badge { font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.06); border-radius: 4px; color: var(--text-dim); font-weight: normal; text-transform: none; border: 1px solid var(--line-2); }
+        .cap-scroll-body { flex: 1; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; box-sizing: border-box; }
+        .cap-action-footer { padding: 12px 16px; border-top: 1px solid var(--line-2); display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; background: var(--bg-1); }
+        .cap-toggle-content { display: flex; flex-direction: column; gap: 12px; }
+        #capture-panel .settings-row { padding: 8px 0; gap: 8px; }
+        #cap-btn-reset-positions { font-size: 11px; padding: 6px 12px; margin-top: 12px; width: 100%; border: 1px solid var(--line-2); background: var(--bg-1); color: var(--text-dim); border-radius: 6px; cursor: pointer; transition: all 0.15s ease; }
+        #cap-btn-reset-positions:hover { background: var(--bg-3); color: var(--text); }
+        .cap-assets-label { font-size: 11px; font-weight: 600; color: var(--text-dim); }
+        .cap-assets-list-wrap { display: flex; flex-direction: column; gap: 6px; }
+        #cap-opt-assets-list { display: flex; flex-direction: column; gap: 4px; }
+        #capture-modal-btn-export { background: var(--accent); border: none; color: #ffffff; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,122,204,0.3); transition: all 0.15s; width: 100%; }
+        #capture-modal-btn-cancel { background: none; border: 1px solid var(--line-2); color: var(--text); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.15s; width: 100%; }
     </style>
 </head>
 
@@ -3942,14 +3957,14 @@
                         <span data-i18n="captureModalTitle">Screenshot Designer</span>
                     </div>
                     <!-- settings panels -->
-                    <div style="flex: 1; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; box-sizing: border-box;">
+                    <div class="cap-scroll-body">
                         
                         <!-- SECTION 1: HINTERGRUND -->
                         <div class="cap-collapsible-section" id="cap-sec-bg">
                             <div class="cap-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
-                                <div style="display: flex; align-items: center; gap: 8px;">
+                                <div class="cap-header-left">
                                     <span class="cap-section-title" data-i18n="captureBgStyle">Hintergrund</span>
-                                    <span class="cap-header-badge" id="cap-badge-bg" style="font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.06); border-radius: 4px; color: var(--text-dim); font-weight: normal; text-transform: none; border: 1px solid var(--line-2);">Transparent</span>
+                                    <span class="cap-header-badge" id="cap-badge-bg">Transparent</span>
                                 </div>
                                 <span class="cap-chevron">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; display: block;"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -3981,9 +3996,9 @@
                         <!-- SECTION 2: RAHMEN-ABSTAND -->
                         <div class="cap-collapsible-section collapsed" id="cap-sec-padding">
                             <div class="cap-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
-                                <div style="display: flex; align-items: center; gap: 8px;">
+                                <div class="cap-header-left">
                                     <span class="cap-section-title" data-i18n="capturePadding">Abstand</span>
-                                    <span class="cap-header-badge" id="cap-badge-padding" style="font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.06); border-radius: 4px; color: var(--text-dim); font-weight: normal; text-transform: none; border: 1px solid var(--line-2);">0px</span>
+                                    <span class="cap-header-badge" id="cap-badge-padding">0px</span>
                                 </div>
                                 <span class="cap-chevron">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; display: block;"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -4008,9 +4023,9 @@
                         <!-- SECTION 3: ANORDNUNG -->
                         <div class="cap-collapsible-section collapsed" id="cap-sec-layout">
                             <div class="cap-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
-                                <div style="display: flex; align-items: center; gap: 8px;">
+                                <div class="cap-header-left">
                                     <span class="cap-section-title" data-i18n="captureLayout">Anordnung</span>
-                                    <span class="cap-header-badge" id="cap-badge-layout" style="font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.06); border-radius: 4px; color: var(--text-dim); font-weight: normal; text-transform: none; border: 1px solid var(--line-2);">Split</span>
+                                    <span class="cap-header-badge" id="cap-badge-layout">Split</span>
                                 </div>
                                 <span class="cap-chevron">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; display: block;"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -4033,9 +4048,9 @@
                         <!-- SECTION 4: CODE SCHRIFTGRÖSSE -->
                         <div class="cap-collapsible-section collapsed" id="cap-sec-fontsize">
                             <div class="cap-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
-                                <div style="display: flex; align-items: center; gap: 8px;">
+                                <div class="cap-header-left">
                                     <span class="cap-section-title" data-i18n="captureCodeFontSize">Schriftgröße</span>
-                                    <span class="cap-header-badge" id="cap-badge-fontsize" style="font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.06); border-radius: 4px; color: var(--text-dim); font-weight: normal; text-transform: none; border: 1px solid var(--line-2);">12.5px</span>
+                                    <span class="cap-header-badge" id="cap-badge-fontsize">12.5px</span>
                                 </div>
                                 <span class="cap-chevron">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; display: block;"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -4058,36 +4073,32 @@
                         <!-- SECTION 5: DETAILS -->
                         <div class="cap-collapsible-section collapsed" id="cap-sec-details">
                             <div class="cap-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
-                                <div style="display: flex; align-items: center; gap: 8px;">
+                                <div class="cap-header-left">
                                     <span class="cap-section-title" data-i18n="captureOptDetailsTitle">Optionen</span>
                                 </div>
                                 <span class="cap-chevron">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; display: block;"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                 </span>
                             </div>
-                            <div class="cap-section-content" style="display: flex; flex-direction: column; gap: 12px;">
+                            <div class="cap-section-content cap-toggle-content">
                                 <!-- Branding Header toggle -->
-                                <div style="display: flex; align-items: center; justify-content: space-between;">
-                                    <span style="font-size: 12px; font-weight: 600; color: var(--text);" data-i18n="captureOptBranding">Branding-Kopfzeile</span>
+                                <div class="settings-row">
+                                    <span class="settings-row-title" data-i18n="captureOptBranding">Branding-Kopfzeile</span>
                                     <label class="md3-toggle">
                                         <input type="checkbox" id="cap-opt-branding">
                                         <span class="md3-track"></span>
                                     </label>
                                 </div>
                                 <!-- Window Titlebars toggle -->
-                                <div style="display: flex; align-items: center; justify-content: space-between;">
-                                    <span style="font-size: 12px; font-weight: 600; color: var(--text);" data-i18n="captureOptTitlebars">Fenster-Titelleisten</span>
+                                <div class="settings-row">
+                                    <span class="settings-row-title" data-i18n="captureOptTitlebars">Fenster-Titelleisten</span>
                                     <label class="md3-toggle">
                                         <input type="checkbox" id="cap-opt-titlebars">
                                         <span class="md3-track"></span>
                                     </label>
                                 </div>
                                 <!-- Reset positions button -->
-                                <button id="cap-btn-reset-positions"
-                                    style="font-size: 11px; padding: 6px 12px; align-self: flex-start; margin-top: 12px; width: 100%; border: 1px solid var(--line-2); background: var(--bg-1); color: var(--text-dim); border-radius: 6px; cursor: pointer; transition: all 0.15s ease;"
-                                    onmouseover="this.style.background='var(--bg-3)'; this.style.color='var(--text)';"
-                                    onmouseout="this.style.background='var(--bg-1)'; this.style.color='var(--text-dim)';"
-                                    data-i18n="captureOptResetPositions">
+                                <button id="cap-btn-reset-positions" data-i18n="captureOptResetPositions">
                                     Positionen zurücksetzen
                                 </button>
                             </div>
@@ -4096,17 +4107,17 @@
                         <!-- SECTION 6: DATEIEN & VERKNÜPFUNGEN -->
                         <div id="cap-opt-assets-section" class="cap-collapsible-section collapsed">
                             <div class="cap-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
-                                <div style="display: flex; align-items: center; gap: 8px;">
+                                <div class="cap-header-left">
                                     <span class="cap-section-title" data-i18n="captureAssetsTitle">Dateien</span>
                                 </div>
                                 <span class="cap-chevron">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; display: block;"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                 </span>
                             </div>
-                            <div class="cap-section-content" style="display: flex; flex-direction: column; gap: 12px;">
+                            <div class="cap-section-content cap-toggle-content">
                                 <!-- Toggle for loading assets in preview -->
-                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
-                                    <span style="font-size: 11px; font-weight: 600; color: var(--text-dim);" data-i18n="captureOptLoadAssets">Linked CSS/JS laden</span>
+                                <div class="settings-row">
+                                    <span class="cap-assets-label" data-i18n="captureOptLoadAssets">Linked CSS/JS laden</span>
                                     <label class="md3-toggle">
                                         <input type="checkbox" id="cap-opt-load-assets" checked>
                                         <span class="md3-track"></span>
@@ -4114,9 +4125,9 @@
                                 </div>
 
                                 <!-- List of checkboxes for displaying linked code -->
-                                <div style="display: flex; flex-direction: column; gap: 6px;">
-                                    <span style="font-size: 11px; font-weight: 600; color: var(--text-dim);" data-i18n="captureOptShowAssets">Dateien auf Bild anzeigen:</span>
-                                    <div id="cap-opt-assets-list" style="display: flex; flex-direction: column; max-height: 260px; overflow-y: auto; padding-right: 4px; box-sizing: border-box;">
+                                <div class="cap-assets-list-wrap">
+                                    <span class="cap-assets-label" data-i18n="captureOptShowAssets">Dateien auf Bild anzeigen:</span>
+                                    <div id="cap-opt-assets-list">
                                         <!-- Checkboxes populated dynamically -->
                                     </div>
                                 </div>
@@ -4125,9 +4136,8 @@
 
                     </div>
                     <!-- Sidebar Panel Action Footer -->
-                    <div style="padding: 12px 16px; border-top: 1px solid var(--line-2); display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; background: var(--bg-1);">
-                        <button id="capture-modal-btn-export"
-                            style="background: var(--accent); border: none; color: #ffffff; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(0, 122, 204, 0.3); transition: all 0.15s; width: 100%;">
+                    <div class="cap-action-footer">
+                        <button id="capture-modal-btn-export">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
                                 stroke-linejoin="round" style="width: 14px; height: 14px;">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -4136,9 +4146,7 @@
                             </svg>
                             <span data-i18n="captureExportBtn">Bild herunterladen</span>
                         </button>
-                        <button id="capture-modal-btn-cancel"
-                            style="background: none; border: 1px solid var(--line-2); color: var(--text); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.15s; width: 100%;"
-                            data-i18n="captureClose">Schließen</button>
+                        <button id="capture-modal-btn-cancel" data-i18n="captureClose">Schließen</button>
                     </div>
                 </div>
 
@@ -5880,6 +5888,7 @@ console.log('App geladen ✨');
         let entryFile = 'index.html';      // preview entry point
         let _startTabPrevSidebar = null;   // sidebar state before Start tab opened
         let _startTabPrevPreview = null;   // preview state before Start tab opened
+        let _captureTabPrevPreview = null; // preview state before Screenshot tab opened
         let currentPreviewPath = 'index.html'; // path shown in preview
         let editor = null;                 // Monaco editor instance
         let models = new Map();            // file name -> ITextModel
@@ -6444,6 +6453,11 @@ console.log('App geladen ✨');
         function setActiveTab(name) {
             if (name !== 'Settings' && name !== 'Start' && name !== 'Screenshot') {
                 lastActiveFile = name;
+            }
+            // Auto-close Screenshot tab when switching to anything else
+            if (name !== 'Screenshot') {
+                const _capIdx = openTabs.indexOf('Screenshot');
+                if (_capIdx !== -1) openTabs.splice(_capIdx, 1);
             }
             activeTab = name;
             renderTabs();
@@ -7844,6 +7858,8 @@ console.log('App geladen ✨');
             let captureView = document.getElementById('capture-tab-view');
             if (captureView) {
                 captureView.style.display = 'none';
+                if (_captureTabPrevPreview === false) setPreviewCollapsed(false);
+                _captureTabPrevPreview = null;
             }
 
             if (name === 'Settings') {
@@ -7928,6 +7944,11 @@ console.log('App geladen ✨');
                     }
                 }
                 
+                // Collapse live preview pane while in screenshot mode
+                const mainElCap = document.getElementById('main');
+                _captureTabPrevPreview = mainElCap.classList.contains('preview-collapsed');
+                if (!_captureTabPrevPreview) setPreviewCollapsed(true);
+
                 // Show screenshot options in sidebar
                 const sidebar = document.querySelector('aside.sidebar');
                 if (sidebar) {
@@ -10844,18 +10865,22 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
 
             const menuWidth = menu.offsetWidth || 150;
             const menuHeight = menu.offsetHeight || 150;
-            const windowWidth = window.innerWidth;
-            const windowHeight = window.innerHeight;
+            const sidebar = document.querySelector('aside.sidebar');
+            const sb = sidebar ? sidebar.getBoundingClientRect() : { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight, width: window.innerWidth };
+
+            // Cap menu width to sidebar width
+            menu.style.maxWidth = Math.floor(sb.width) + 'px';
 
             let x = e.clientX;
             let y = e.clientY;
 
-            if (x + menuWidth > windowWidth) {
-                x = windowWidth - menuWidth - 4;
-            }
-            if (y + menuHeight > windowHeight) {
-                y = windowHeight - menuHeight - 4;
-            }
+            // Keep within sidebar horizontal bounds
+            if (x + menuWidth > sb.right) x = sb.right - menuWidth - 4;
+            if (x < sb.left) x = sb.left + 4;
+
+            // Keep within sidebar vertical bounds
+            if (y + menuHeight > sb.bottom) y = sb.bottom - menuHeight - 4;
+            if (y < sb.top) y = sb.top + 4;
 
             menu.style.left = x + 'px';
             menu.style.top = y + 'px';
@@ -11810,8 +11835,27 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
             `;
 
             // Run Prism syntax highlighting
-            card.querySelectorAll('code').forEach(codeEl => {
-                Prism.highlightElement(codeEl);
+            if (typeof Prism !== 'undefined') {
+                card.querySelectorAll('code').forEach(codeEl => {
+                    Prism.highlightElement(codeEl);
+                });
+            }
+
+            // Dim/disable pills that are irrelevant for the current layout
+            const _activePillLayout = layout;
+            document.querySelectorAll('.cap-file-code-check').forEach(cb => {
+                const lbl = cb.closest('label');
+                if (!lbl) return;
+                const off = _activePillLayout === 'preview';
+                lbl.style.opacity = off ? '0.3' : '';
+                lbl.style.pointerEvents = off ? 'none' : '';
+            });
+            document.querySelectorAll('.cap-file-preview-check').forEach(cb => {
+                const lbl = cb.closest('label');
+                if (!lbl) return;
+                const off = _activePillLayout === 'code';
+                lbl.style.opacity = off ? '0.3' : '';
+                lbl.style.pointerEvents = off ? 'none' : '';
             });
 
             // Re-apply preview scaling factor to fit the container
@@ -12246,7 +12290,7 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                         assetsList.appendChild(itemDiv);
                     });
                 }
-                if (assetsSection) assetsSection.style.display = 'flex';
+                if (assetsSection) assetsSection.style.display = '';
 
                 // 4. Initialize dynamic designer modal events (run once)
                 if (!captureModalInited) {
