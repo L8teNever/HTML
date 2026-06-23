@@ -11695,10 +11695,11 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                 }
             });
 
-            // Sort paths: targetFile first, then linked assets, then others alphabetically
+            // Sort paths: targetFile first, then linked assets/pages, then others alphabetically
             let sortedPaths = Array.from(selectedFiles);
             const rawCode = files[targetFile] || '';
             const linkedAssets = new Set();
+            const linkedHtmlPagesRender = new Set();
             if (targetFile && (targetFile.endsWith('.html') || targetFile.endsWith('.htm'))) {
                 const docParser = new DOMParser();
                 const parsedDoc = docParser.parseFromString(rawCode, 'text/html');
@@ -11711,6 +11712,16 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                     const srcAttr = scr.getAttribute('src');
                     const resolved = resolveRefPath(targetFile, srcAttr);
                     if (resolved && resolved in files) linkedAssets.add(resolved);
+                });
+                parsedDoc.querySelectorAll('a[href]').forEach(a => {
+                    const href = a.getAttribute('href');
+                    if (!href || /^([a-z]+:|\/\/|#|mailto:|tel:)/i.test(href)) return;
+                    const clean = href.split('#')[0].split('?')[0];
+                    if (!clean) return;
+                    const resolved = resolveRefPath(targetFile, clean);
+                    if (resolved && resolved in files && (resolved.endsWith('.html') || resolved.endsWith('.htm'))) {
+                        linkedHtmlPagesRender.add(resolved);
+                    }
                 });
             }
 
@@ -11726,8 +11737,8 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
             sortedPaths.sort((a, b) => {
                 if (a === targetFile) return -1;
                 if (b === targetFile) return 1;
-                const aLinked = linkedAssets.has(a);
-                const bLinked = linkedAssets.has(b);
+                const aLinked = linkedAssets.has(a) || linkedHtmlPagesRender.has(a);
+                const bLinked = linkedAssets.has(b) || linkedHtmlPagesRender.has(b);
                 if (aLinked && !bLinked) return -1;
                 if (!aLinked && bLinked) return 1;
                 return a.localeCompare(b);
@@ -12257,7 +12268,8 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                 captureCodeContent = rawCode;
 
                 // 3. Resolve linked assets of targetFile if it is HTML
-                const linkedAssets = new Set();
+                const linkedAssets = new Set();   // CSS / JS (code pill pre-checked)
+                const linkedHtmlPages = new Set(); // other HTML pages via <a href> (preview pill pre-checked)
                 if (targetFile.endsWith('.html') || targetFile.endsWith('.htm')) {
                     const docParser = new DOMParser();
                     const parsedDoc = docParser.parseFromString(rawCode, 'text/html');
@@ -12275,6 +12287,17 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                             linkedAssets.add(resolved);
                         }
                     });
+                    // Detect linked HTML pages via <a href>
+                    parsedDoc.querySelectorAll('a[href]').forEach(a => {
+                        const href = a.getAttribute('href');
+                        if (!href || /^([a-z]+:|\/\/|#|mailto:|tel:)/i.test(href)) return;
+                        const clean = href.split('#')[0].split('?')[0];
+                        if (!clean) return;
+                        const resolved = resolveRefPath(targetFile, clean);
+                        if (resolved && resolved in files && (resolved.endsWith('.html') || resolved.endsWith('.htm'))) {
+                            linkedHtmlPages.add(resolved);
+                        }
+                    });
                 }
 
                 // Update HTML assets options
@@ -12290,12 +12313,12 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                     assetsList.innerHTML = '';
                     const allPaths = Object.keys(files);
                     
-                    // Sort paths: targetFile first, then linked assets, then others alphabetically
+                    // Sort paths: targetFile first, then linked assets/pages, then others alphabetically
                     allPaths.sort((a, b) => {
                         if (a === targetFile) return -1;
                         if (b === targetFile) return 1;
-                        const aLinked = linkedAssets.has(a);
-                        const bLinked = linkedAssets.has(b);
+                        const aLinked = linkedAssets.has(a) || linkedHtmlPages.has(a);
+                        const bLinked = linkedAssets.has(b) || linkedHtmlPages.has(b);
                         if (aLinked && !bLinked) return -1;
                         if (!aLinked && bLinked) return 1;
                         return a.localeCompare(b);
@@ -12335,10 +12358,10 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                             badge.className = 'cap-badge active';
                             badge.textContent = t('active') || 'aktiv';
                             nameRow.appendChild(badge);
-                        } else if (linkedAssets.has(path)) {
+                        } else if (linkedAssets.has(path) || linkedHtmlPages.has(path)) {
                             const badge = document.createElement('span');
                             badge.className = 'cap-badge linked';
-                            badge.textContent = t('linked') || 'verknüpft';
+                            badge.textContent = linkedHtmlPages.has(path) ? (t('linkedPage') || 'Seite') : (t('linked') || 'verknüpft');
                             nameRow.appendChild(badge);
                         }
                         
@@ -12387,7 +12410,7 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                             prevCheck.type = 'checkbox';
                             prevCheck.className = 'cap-file-preview-check';
                             prevCheck.dataset.path = path;
-                            prevCheck.checked = (path === targetFile);
+                            prevCheck.checked = (path === targetFile || linkedHtmlPages.has(path));
                             
                             prevLabel.className = 'cap-pill-check' + (prevCheck.checked ? ' checked' : '');
                             prevLabel.appendChild(prevCheck);
