@@ -13304,15 +13304,65 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                         backgroundColor: bgStyle === 'transparent' ? null : undefined,
                         onclone: (clonedDoc) => {
                             // Strip ALL app stylesheets — capture cards use inline styles exclusively.
-                            // html2canvas's CSS parser chokes on CSS custom properties and complex values
-                            // in CLEO's main <style> tag, producing "unexpected EOF" errors.
                             clonedDoc.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => el.remove());
+
+                            let prismStyleNode = null;
                             // Re-inject minimal Prism token rules so syntax highlighting survives
                             if (_prismRules.length) {
-                                const s = clonedDoc.createElement('style');
-                                s.textContent = _prismRules.join('\n');
-                                clonedDoc.head.appendChild(s);
+                                prismStyleNode = clonedDoc.createElement('style');
+                                prismStyleNode.textContent = _prismRules.join('\n');
+                                clonedDoc.head.appendChild(prismStyleNode);
                             }
+
+                            // Mock clonedDoc.styleSheets to return only the newly injected Prism style
+                            Object.defineProperty(clonedDoc, 'styleSheets', {
+                                get: () => {
+                                    if (prismStyleNode && prismStyleNode.sheet) {
+                                        return [prismStyleNode.sheet];
+                                    }
+                                    return [];
+                                },
+                                configurable: true
+                            });
+
+                            // Clean and mock iframe stylesheets to prevent parser choking inside iframe documents
+                            clonedDoc.querySelectorAll('iframe').forEach(iframe => {
+                                try {
+                                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                                    if (iframeDoc) {
+                                        // 1. Remove Tailwind style elements to be safe
+                                        iframeDoc.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => {
+                                            const content = el.textContent || '';
+                                            const href = el.getAttribute('href') || '';
+                                            const id = el.id || '';
+                                            if (id.includes('tailwind') || href.includes('tailwind') || content.includes('*/*') || content.includes('/* ! tailwindcss')) {
+                                                el.remove();
+                                            }
+                                        });
+
+                                        // 2. Mock iframeDoc.styleSheets to filter out Tailwind and other potential problematic stylesheets
+                                        const originalIframeSheets = iframeDoc.styleSheets;
+                                        Object.defineProperty(iframeDoc, 'styleSheets', {
+                                            get: () => {
+                                                return Array.from(originalIframeSheets).filter(sheet => {
+                                                    try {
+                                                        if (sheet.ownerNode) {
+                                                            const id = sheet.ownerNode.id || '';
+                                                            const href = sheet.ownerNode.getAttribute?.('href') || '';
+                                                            const content = sheet.ownerNode.textContent || '';
+                                                            if (id.includes('tailwind') || href.includes('tailwind') || content.includes('*/*') || content.includes('/* ! tailwindcss')) {
+                                                                return false;
+                                                            }
+                                                        }
+                                                    } catch (_) {}
+                                                    return true;
+                                                });
+                                            },
+                                            configurable: true
+                                        });
+                                    }
+                                } catch (_) {}
+                            });
                         }
                     });
                 } finally {
