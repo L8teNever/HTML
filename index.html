@@ -12126,13 +12126,11 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
             draggables.forEach(dragEl => {
                 const cardId = dragEl.dataset.cardId;
 
-                // Cancel leftover inertia from previous render cycle
                 if (dragEl._inertiaRaf) {
                     cancelAnimationFrame(dragEl._inertiaRaf);
                     dragEl._inertiaRaf = null;
                 }
 
-                // GPU-promote the card for jank-free compositing
                 dragEl.style.willChange = 'transform';
 
                 const titlebar = dragEl.querySelector('.cap-drag-handle') || dragEl;
@@ -12142,7 +12140,6 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                     if (e.target.closest('button, input, select, a, iframe, label, .cap-badge')) return;
                     e.preventDefault();
 
-                    // Cancel any running inertia so we grab the card cleanly
                     if (dragEl._inertiaRaf) {
                         cancelAnimationFrame(dragEl._inertiaRaf);
                         dragEl._inertiaRaf = null;
@@ -12154,18 +12151,24 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                     dragEl.style.cursor = 'grabbing';
                     if (titlebar !== dragEl) titlebar.style.cursor = 'grabbing';
 
-                    // Apply lift scale immediately on grab
                     const pos0 = captureCardPositions[cardId] || { x: 0, y: 0 };
                     dragEl.style.transform = `translate(${pos0.x}px, ${pos0.y}px) scale(1.04)`;
 
                     const iframes = card.querySelectorAll('iframe');
                     iframes.forEach(iframe => iframe.style.pointerEvents = 'none');
 
+                    // Snap guide lines — live inside #capture-preview-card coordinate space
+                    const guideV = document.createElement('div');
+                    guideV.style.cssText = 'position:absolute;top:-9999px;bottom:-9999px;width:0;border-left:2px dashed rgba(0,122,204,0.9);pointer-events:none;z-index:99998;display:none;';
+                    card.appendChild(guideV);
+                    const guideH = document.createElement('div');
+                    guideH.style.cssText = 'position:absolute;left:-9999px;right:-9999px;height:0;border-top:2px dashed rgba(0,122,204,0.9);pointer-events:none;z-index:99998;display:none;';
+                    card.appendChild(guideH);
+
                     const startX = e.clientX ?? (e.touches && e.touches[0].clientX);
                     const startY = e.clientY ?? (e.touches && e.touches[0].clientY);
                     const initialPos = { ...(captureCardPositions[cardId] || { x: 0, y: 0 }) };
 
-                    // Velocity tracking via exponential moving average
                     let velX = 0, velY = 0;
                     let lastX = startX, lastY = startY;
                     let lastTime = performance.now();
@@ -12176,25 +12179,20 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                         const now = performance.now();
                         const dt = Math.max(now - lastTime, 1);
 
-                        // Scale-correct: mouse delta is in screen px, card coords are in canvas px
                         const sc = captureCurrentScale || 1;
                         const alpha = 0.72;
                         velX = alpha * velX + (1 - alpha) * ((currentX - lastX) / dt * 16 / sc);
                         velY = alpha * velY + (1 - alpha) * ((currentY - lastY) / dt * 16 / sc);
-
-                        lastX = currentX;
-                        lastY = currentY;
-                        lastTime = now;
+                        lastX = currentX; lastY = currentY; lastTime = now;
 
                         const rawX = initialPos.x + (currentX - startX) / sc;
                         const rawY = initialPos.y + (currentY - startY) / sc;
 
-                        // Edge-snap against all other cards (threshold in canvas px)
-                        const SNAP = 18 / sc;
+                        const SNAP = 25 / sc;
                         const W = dragEl.offsetWidth;
                         const H = dragEl.offsetHeight;
-                        let bestSnapX = null, bestDistX = SNAP;
-                        let bestSnapY = null, bestDistY = SNAP;
+                        let bestSnapX = null, bestDistX = SNAP, guideLineX = null;
+                        let bestSnapY = null, bestDistY = SNAP, guideLineY = null;
 
                         Object.entries(captureCardPositions).forEach(([otherId, otherPos]) => {
                             if (otherId === cardId) return;
@@ -12202,19 +12200,40 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                             if (!otherEl) return;
                             const OW = otherEl.offsetWidth, OH = otherEl.offsetHeight;
                             const ox = otherPos.x, oy = otherPos.y;
+                            const ocx = ox + OW / 2, ocy = oy + OH / 2;
 
-                            [[ox, Math.abs(rawX - ox)], [ox + OW, Math.abs(rawX - (ox + OW))],
-                             [ox - W, Math.abs((rawX + W) - ox)], [ox + OW - W, Math.abs((rawX + W) - (ox + OW))]
-                            ].forEach(([snap, dist]) => { if (dist < bestDistX) { bestDistX = dist; bestSnapX = snap; } });
+                            // X: edges + center [snappedLeft, distance, guideX]
+                            [
+                                [ox,          Math.abs(rawX - ox),               ox       ],  // left-left
+                                [ox + OW,     Math.abs(rawX - (ox + OW)),        ox + OW  ],  // left-right
+                                [ox - W,      Math.abs((rawX + W) - ox),         ox       ],  // right-left
+                                [ox + OW - W, Math.abs((rawX + W) - (ox + OW)), ox + OW  ],  // right-right
+                                [ocx - W/2,   Math.abs(rawX + W/2 - ocx),       ocx      ],  // center-center
+                            ].forEach(([snap, dist, guide]) => {
+                                if (dist < bestDistX) { bestDistX = dist; bestSnapX = snap; guideLineX = guide; }
+                            });
 
-                            [[oy, Math.abs(rawY - oy)], [oy + OH, Math.abs(rawY - (oy + OH))],
-                             [oy - H, Math.abs((rawY + H) - oy)], [oy + OH - H, Math.abs((rawY + H) - (oy + OH))]
-                            ].forEach(([snap, dist]) => { if (dist < bestDistY) { bestDistY = dist; bestSnapY = snap; } });
+                            // Y: edges + center [snappedTop, distance, guideY]
+                            [
+                                [oy,          Math.abs(rawY - oy),               oy       ],  // top-top
+                                [oy + OH,     Math.abs(rawY - (oy + OH)),        oy + OH  ],  // top-bottom (place below)
+                                [oy - H,      Math.abs((rawY + H) - oy),         oy       ],  // bottom-top (place above)
+                                [oy + OH - H, Math.abs((rawY + H) - (oy + OH)), oy + OH  ],  // bottom-bottom
+                                [ocy - H/2,   Math.abs(rawY + H/2 - ocy),       ocy      ],  // center-center
+                            ].forEach(([snap, dist, guide]) => {
+                                if (dist < bestDistY) { bestDistY = dist; bestSnapY = snap; guideLineY = guide; }
+                            });
                         });
 
                         const newX = bestSnapX !== null ? bestSnapX : rawX;
                         const newY = bestSnapY !== null ? bestSnapY : rawY;
                         dragEl.classList.toggle('cap-snap-active', bestSnapX !== null || bestSnapY !== null);
+
+                        // Show/hide snap guide lines on the canvas
+                        if (bestSnapX !== null) { guideV.style.left = guideLineX + 'px'; guideV.style.display = 'block'; }
+                        else { guideV.style.display = 'none'; }
+                        if (bestSnapY !== null) { guideH.style.top = guideLineY + 'px'; guideH.style.display = 'block'; }
+                        else { guideH.style.display = 'none'; }
 
                         captureCardPositions[cardId] = { x: newX, y: newY };
                         dragEl.style.transform = `translate(${newX}px, ${newY}px) scale(1.04)`;
@@ -12230,8 +12249,9 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                         if (titlebar !== dragEl) titlebar.style.cursor = 'grab';
                         iframes.forEach(iframe => iframe.style.pointerEvents = '');
                         dragEl.classList.remove('cap-snap-active');
+                        guideV.remove();
+                        guideH.remove();
 
-                        // Momentum glide + scale spring back, both animated per-frame
                         const friction = 0.87;
                         const minVel = 0.35;
                         let scaleVal = 1.04;
@@ -12239,7 +12259,7 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                         const animate = () => {
                             velX *= friction;
                             velY *= friction;
-                            scaleVal = 1 + (scaleVal - 1) * 0.82; // spring toward 1
+                            scaleVal = 1 + (scaleVal - 1) * 0.82;
 
                             const pos = captureCardPositions[cardId];
                             const newX = pos.x + velX;
@@ -12250,10 +12270,7 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                             const scaleStr = done ? '' : ` scale(${scaleVal.toFixed(4)})`;
                             dragEl.style.transform = `translate(${newX}px, ${newY}px)${scaleStr}`;
 
-                            if (done) {
-                                dragEl._inertiaRaf = null;
-                                return;
-                            }
+                            if (done) { dragEl._inertiaRaf = null; return; }
                             dragEl._inertiaRaf = requestAnimationFrame(animate);
                         };
 
