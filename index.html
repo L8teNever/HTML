@@ -3617,6 +3617,90 @@
         #cap-opt-assets-list { display: flex; flex-direction: column; gap: 4px; }
         #capture-modal-btn-export { background: var(--accent); border: none; color: #ffffff; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,122,204,0.3); transition: all 0.15s; width: 100%; }
         #capture-modal-btn-cancel { background: none; border: 1px solid var(--line-2); color: var(--text); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.15s; width: 100%; }
+
+        /* ====================== TABLET RESPONSIVE (≤ 1024 px) ====================== */
+        @media (max-width: 1024px) {
+            /* Tabs — larger touch targets */
+            .tab { height: 44px; padding: 0 12px 0 14px; font-size: 13px; }
+            .tabs-wrap { height: 44px; }
+            .tabs-wrap .tabs { height: 44px; }
+            .preview-toggle-btn { height: 44px; width: 44px; }
+
+            /* Preview bar */
+            .preview-bar { height: 44px; }
+
+            /* Sidebar header rows */
+            .side-head { height: 44px; }
+            .explorer-section { height: 28px; }
+
+            /* File list rows — better tap targets */
+            .file-row { height: 34px; font-size: 13.5px; }
+            .file-row .actions button { width: 26px; height: 26px; }
+
+            /* Context menu items */
+            .ctx-item { height: 36px; padding: 0 16px; font-size: 13.5px; }
+            .ctx-shortcut { display: none; }
+
+            /* Resize handles — wider hit area for touch */
+            .resize-handle { min-width: 10px; }
+
+            /* Activity bar — slightly bigger icons */
+            .act-btn svg { width: 28px; height: 28px; }
+
+            /* Modal — fit small screens */
+            .modal { width: min(440px, calc(100vw - 24px)); }
+
+            /* Status bar */
+            .statusbar { font-size: 12px; }
+
+            /* Start screen */
+            .start-grid { gap: 10px; }
+
+            /* Capture panel */
+            .cap-scroll-body { padding: 10px 12px; }
+            .cap-action-footer { padding: 10px 12px; }
+            .settings-row { min-height: 36px; }
+
+            /* Form controls */
+            select, input[type=text], input[type=number] { min-height: 36px; }
+        }
+
+        /* Narrow tablet / large phone (≤ 768 px) — activity bar moves to bottom */
+        @media (max-width: 768px) {
+            .app {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 48px 22px;
+            }
+            .activity-bar {
+                grid-column: 1;
+                grid-row: 2;
+                flex-direction: row;
+                border-right: none;
+                border-top: 1px solid var(--line);
+                height: 48px;
+                overflow-x: auto;
+                overflow-y: hidden;
+                justify-content: center;
+            }
+            .act-top { flex-direction: row; flex: none; justify-content: center; }
+            .act-bottom { flex-direction: row; padding-bottom: 0; padding-right: 4px; }
+            .act-btn { width: 52px; height: 48px; }
+            .act-btn.active::before {
+                left: 0; right: 0; top: auto; bottom: 0;
+                width: auto; height: 2px;
+            }
+            .main { grid-column: 1; grid-row: 1; }
+            .statusbar { grid-column: 1; grid-row: 3; }
+
+            .context-menu { min-width: 220px; font-size: 14px; }
+            .ctx-item { height: 42px; padding: 0 20px; }
+
+            .tab { height: 48px; min-width: 80px; }
+            .tabs-wrap { height: 48px; }
+            .tabs-wrap .tabs { height: 48px; }
+            .preview-toggle-btn { height: 48px; width: 48px; }
+            .preview-bar { height: 46px; }
+        }
     </style>
 </head>
 
@@ -8855,6 +8939,15 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
         try {
             if (localStorage.getItem('codeplay.preview') === '1') setPreviewCollapsed(true);
         } catch (e) { }
+
+        // On tablet-sized screens with no saved layout preference, set sensible defaults:
+        // collapse the sidebar on any tablet, hide the preview pane on narrow tablets.
+        try {
+            const _vw = window.innerWidth;
+            if (_vw <= 1024 && localStorage.getItem('codeplay.sidebar') === null) setSidebarCollapsed(true);
+            if (_vw <= 900  && localStorage.getItem('codeplay.preview') === null) setPreviewCollapsed(true);
+        } catch (e) { }
+
         document.getElementById('btn-refresh').addEventListener('click', () => refreshPreview(true));
         document.getElementById('btn-open').addEventListener('click', () => {
             const path = currentPreviewPath in files ? currentPreviewPath : entryFile;
