@@ -108,6 +108,8 @@
             grid-template-columns: 48px 1fr;
             grid-template-rows: 1fr 22px;
             height: 100vh;
+            height: 100dvh;
+            overscroll-behavior: none;
         }
 
         /* ---- Activity Bar (VS Code left icon rail) ---- */
@@ -326,6 +328,7 @@
             cursor: col-resize;
             z-index: 10;
             user-select: none;
+            touch-action: none;
             transition: opacity 0.22s ease, visibility 0.22s ease;
         }
 
@@ -3620,6 +3623,11 @@
 
         /* ====================== TABLET RESPONSIVE (≤ 1024 px) ====================== */
         @media (max-width: 1024px) {
+            /* Grid — extend last row for device safe-area (iOS home indicator etc.) */
+            .app {
+                grid-template-rows: 1fr calc(22px + env(safe-area-inset-bottom, 0px));
+            }
+
             /* Tabs — larger touch targets */
             .tab { height: 44px; padding: 0 12px 0 14px; font-size: 13px; }
             .tabs-wrap { height: 44px; }
@@ -3634,24 +3642,28 @@
             .explorer-section { height: 28px; }
 
             /* File list rows — better tap targets */
-            .file-row { height: 34px; font-size: 13.5px; }
-            .file-row .actions button { width: 26px; height: 26px; }
+            .file-row { height: 38px; font-size: 13.5px; }
+            .file-row .actions button { width: 32px; height: 32px; }
 
             /* Context menu items */
-            .ctx-item { height: 36px; padding: 0 16px; font-size: 13.5px; }
+            .ctx-item { height: 40px; padding: 0 16px; font-size: 13.5px; }
             .ctx-shortcut { display: none; }
 
             /* Resize handles — wider hit area for touch */
-            .resize-handle { min-width: 10px; }
+            .resize-handle { min-width: 16px; }
 
             /* Activity bar — slightly bigger icons */
+            .act-btn { width: 52px; height: 52px; }
             .act-btn svg { width: 28px; height: 28px; }
 
             /* Modal — fit small screens */
             .modal { width: min(440px, calc(100vw - 24px)); }
 
-            /* Status bar */
-            .statusbar { font-size: 12px; }
+            /* Status bar — safe area at bottom */
+            .statusbar {
+                font-size: 12px;
+                padding-bottom: env(safe-area-inset-bottom, 0px);
+            }
 
             /* Start screen */
             .start-grid { gap: 10px; }
@@ -3659,47 +3671,60 @@
             /* Capture panel */
             .cap-scroll-body { padding: 10px 12px; }
             .cap-action-footer { padding: 10px 12px; }
-            .settings-row { min-height: 36px; }
+            .settings-row { min-height: 40px; }
 
             /* Form controls */
-            select, input[type=text], input[type=number] { min-height: 36px; }
+            select, input[type=text], input[type=number] { min-height: 40px; }
         }
 
-        /* Narrow tablet / large phone (≤ 768 px) — activity bar moves to bottom */
+        /* Narrow tablet / large phone (≤ 768 px) — activity bar at bottom with safe area */
         @media (max-width: 768px) {
+            /* Layout: main | statusbar | activity-bar (activity-bar absorbs safe area) */
             .app {
                 grid-template-columns: 1fr;
-                grid-template-rows: 1fr 48px 22px;
+                grid-template-rows: 1fr 22px calc(52px + env(safe-area-inset-bottom, 0px));
+            }
+            .main { grid-column: 1; grid-row: 1; }
+            .statusbar {
+                grid-column: 1;
+                grid-row: 2;
+                padding-bottom: 0;
+                height: 22px;
             }
             .activity-bar {
                 grid-column: 1;
-                grid-row: 2;
+                grid-row: 3;
                 flex-direction: row;
                 border-right: none;
                 border-top: 1px solid var(--line);
-                height: 48px;
+                /* Total height = 52px buttons + safe area below */
+                height: calc(52px + env(safe-area-inset-bottom, 0px));
+                padding-bottom: env(safe-area-inset-bottom, 0px);
+                box-sizing: border-box;
                 overflow-x: auto;
                 overflow-y: hidden;
                 justify-content: center;
+                align-items: center;
             }
-            .act-top { flex-direction: row; flex: none; justify-content: center; }
-            .act-bottom { flex-direction: row; padding-bottom: 0; padding-right: 4px; }
-            .act-btn { width: 52px; height: 48px; }
+            .act-top { flex-direction: row; flex: none; justify-content: center; align-items: center; }
+            .act-bottom { flex-direction: row; padding-bottom: 0; padding-right: 4px; align-items: center; }
+            .act-btn { width: 52px; height: 52px; }
             .act-btn.active::before {
                 left: 0; right: 0; top: auto; bottom: 0;
                 width: auto; height: 2px;
             }
-            .main { grid-column: 1; grid-row: 1; }
-            .statusbar { grid-column: 1; grid-row: 3; }
 
             .context-menu { min-width: 220px; font-size: 14px; }
-            .ctx-item { height: 42px; padding: 0 20px; }
+            .ctx-item { height: 44px; padding: 0 20px; }
 
             .tab { height: 48px; min-width: 80px; }
             .tabs-wrap { height: 48px; }
             .tabs-wrap .tabs { height: 48px; }
             .preview-toggle-btn { height: 48px; width: 48px; }
-            .preview-bar { height: 46px; }
+            .preview-bar { height: 48px; }
+
+            /* Resize handles even wider on small screens */
+            .resize-handle { min-width: 20px; }
         }
     </style>
 </head>
@@ -9009,9 +9034,10 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                 main.style.setProperty('--col-preview', '1fr');
             }
 
+            function clientX(e) { return e.touches ? e.touches[0].clientX : e.clientX; }
             function startDrag(e, edge, handleEl) {
                 dragging = edge;
-                startX = e.clientX;
+                startX = clientX(e);
                 startCols = colsPx();
                 document.body.classList.add('resizing');
                 handleEl.classList.add('dragging');
@@ -9019,7 +9045,7 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
             }
             function onMove(e) {
                 if (!dragging) return;
-                const dx = e.clientX - startX;
+                const dx = clientX(e) - startX;
                 if (dragging === 'sidebar') {
                     const w = Math.max(150, Math.min(500, startCols[0] + dx));
                     main.style.setProperty('--col-sidebar', w + 'px');
@@ -9045,6 +9071,7 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
             }
             document.querySelectorAll('.resize-handle').forEach(h => {
                 h.addEventListener('mousedown', (e) => startDrag(e, h.dataset.edge, h));
+                h.addEventListener('touchstart', (e) => startDrag(e, h.dataset.edge, h), { passive: false });
                 h.addEventListener('dblclick', () => {
                     if (h.dataset.edge === 'sidebar') {
                         main.style.setProperty('--col-sidebar', '220px');
@@ -9058,6 +9085,8 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
             });
             window.addEventListener('mousemove', onMove);
             window.addEventListener('mouseup', onUp);
+            window.addEventListener('touchmove', onMove, { passive: false });
+            window.addEventListener('touchend', onUp);
             window.addEventListener('resize', clampCols);
 
             // Restore from storage
