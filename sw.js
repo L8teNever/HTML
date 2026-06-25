@@ -3,7 +3,7 @@
    Cache-first für lokale Assets, Network-first für CDN-Ressourcen
    ============================================================ */
 
-const CACHE_NAME = 'cleo-v14';
+const CACHE_NAME = 'cleo-v15';
 
 /* Alle lokalen Dateien, die gecacht werden sollen */
 const LOCAL_ASSETS = [
@@ -19,7 +19,6 @@ const LOCAL_ASSETS = [
   './lib/html2canvas.min.js',
   './lib/prism.js',
   './lib/prism-tomorrow.min.css',
-  './lib/tailwind.min.js',
 ];
 
 /* index.html bekommt Network-first, damit Änderungen sofort sichtbar sind */

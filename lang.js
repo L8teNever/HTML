@@ -260,7 +260,6 @@ window.STRINGS = {
                     <li><strong>Google Fonts (Lokal gehostet)</strong> – Die Schriftart „JetBrains Mono“ wird lokal gehostet und geladen (100% DSGVO-konform).</li>
                     <li><strong>html2canvas (Lokal gehostet)</strong> – Die Screenshot-Bibliothek wird bei Bedarf lokal geladen und im Browser ausgeführt.</li>
                     <li><strong>Prism.js &amp; Prism-CSS (Lokal gehostet)</strong> – Syntax-Highlighting für Screenshots wird lokal bereitgestellt.</li>
-                    <li><strong>Tailwind CSS (Lokal gehostet)</strong> – Tailwind CSS für den Onboarding-Bildschirm wird lokal geladen.</li>
                 </ul>
                 <div class="pm-callout">
                     <strong>Hinweis zu Cloudflare Tunnel:</strong> Wenn du CLEO über einen Cloudflare Tunnel aufrufst (z. B. über eine öffentliche URL statt <code>file://</code>), läuft dein HTTP-Traffic durch Cloudflare's Infrastruktur. Cloudflare kann dabei Verbindungsmetadaten sehen – jedoch <strong>keinen</strong> deiner Dateien oder localStorage-Inhalte.
@@ -578,7 +577,6 @@ window.STRINGS = {
                     <li><strong>Google Fonts (Locally hosted)</strong> – The font "JetBrains Mono" is hosted locally (100% GDPR compliant).</li>
                     <li><strong>html2canvas (Locally hosted)</strong> – The screenshot library is loaded locally when needed.</li>
                     <li><strong>Prism.js &amp; Prism-CSS (Locally hosted)</strong> – Syntax highlighting for screenshots is loaded locally.</li>
-                    <li><strong>Tailwind CSS (Locally hosted)</strong> – Tailwind CSS for the welcome screen is loaded locally.</li>
                 </ul>
                 <div class="pm-callout">
                     <strong>Note on Cloudflare Tunnels:</strong> If you access CLEO through a Cloudflare Tunnel (e.g. via a public URL instead of <code>file://</code>), Cloudflare may see connection metadata – but <strong>none</strong> of your files or localStorage content.

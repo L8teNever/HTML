@@ -4728,9 +4728,7 @@
                         <li><strong>Prism.js &amp; Prism-CSS (cdnjs.cloudflare.com)</strong> – Ebenfalls nur bei
                             Screenshot-Nutzung werden Syntax-Highlighting-Bibliotheken von Cloudflare's CDN geladen.
                         </li>
-                        <li><strong>Tailwind CSS CDN (cdn.tailwindcss.com)</strong> – Für den Willkommensbildschirm wird
-                            Tailwind CSS vom offiziellen CDN geladen. Dabei erfolgt eine Netzwerkanfrage an Tailwind's
-                            Server.</li>
+
                     </ul>
                     <div class="pm-callout">
                         <strong>Hinweis zu Cloudflare Tunnel:</strong> Wenn du CLEO über einen Cloudflare Tunnel
@@ -4938,17 +4936,7 @@
     </div>
 
     <!-- ============= WELCOME / ONBOARDING ============= -->
-    <!-- Tailwind for the new welcome overlay -->
-    <script>
-        (function () {
-            if (!document.getElementById('tw-cdn-welcome')) {
-                var s = document.createElement('script');
-                s.id = 'tw-cdn-welcome';
-                s.src = './lib/tailwind.min.js';
-                document.head.appendChild(s);
-            }
-        })();
-    </script>
+
     <style>
         /* ---- New Welcome Overlay (VS Code style) ---- */
         .welcome-bg {
