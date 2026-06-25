@@ -13286,27 +13286,39 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                     } catch (_) {}
                 });
 
-                const canvas = await html2canvas(card, {
-                    width: actualW,
-                    height: actualH,
-                    scale: 2,
-                    logging: false,
-                    useCORS: true,
-                    allowTaint: true,
-                    backgroundColor: bgStyle === 'transparent' ? null : undefined,
-                    onclone: (clonedDoc) => {
-                        // Strip ALL app stylesheets — capture cards use inline styles exclusively.
-                        // html2canvas's CSS parser chokes on CSS custom properties and complex values
-                        // in CLEO's main <style> tag, producing "unexpected EOF" errors.
-                        clonedDoc.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => el.remove());
-                        // Re-inject minimal Prism token rules so syntax highlighting survives
-                        if (_prismRules.length) {
-                            const s = clonedDoc.createElement('style');
-                            s.textContent = _prismRules.join('\n');
-                            clonedDoc.head.appendChild(s);
-                        }
-                    }
+                // Temporarily mock document.styleSheets to bypass html2canvas CSS parsing bugs (like unexpected EOF from Tailwind CDN CSS)
+                Object.defineProperty(document, 'styleSheets', {
+                    get: () => [],
+                    configurable: true
                 });
+
+                let canvas;
+                try {
+                    canvas = await html2canvas(card, {
+                        width: actualW,
+                        height: actualH,
+                        scale: 2,
+                        logging: false,
+                        useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: bgStyle === 'transparent' ? null : undefined,
+                        onclone: (clonedDoc) => {
+                            // Strip ALL app stylesheets — capture cards use inline styles exclusively.
+                            // html2canvas's CSS parser chokes on CSS custom properties and complex values
+                            // in CLEO's main <style> tag, producing "unexpected EOF" errors.
+                            clonedDoc.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => el.remove());
+                            // Re-inject minimal Prism token rules so syntax highlighting survives
+                            if (_prismRules.length) {
+                                const s = clonedDoc.createElement('style');
+                                s.textContent = _prismRules.join('\n');
+                                clonedDoc.head.appendChild(s);
+                            }
+                        }
+                    });
+                } finally {
+                    // Restore original document.styleSheets
+                    delete document.styleSheets;
+                }
 
                 // Restore scale transform
                 card.style.transform = oldTransform;
