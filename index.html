@@ -3611,6 +3611,7 @@
         #capture-panel .settings-row { padding: 8px 0; gap: 8px; }
         #cap-btn-reset-positions { font-size: 11px; padding: 6px 12px; margin-top: 12px; width: 100%; border: 1px solid var(--line-2); background: var(--bg-1); color: var(--text-dim); border-radius: 6px; cursor: pointer; transition: all 0.15s ease; }
         #cap-btn-reset-positions:hover { background: var(--bg-3); color: var(--text); }
+        .cap-draggable-card.cap-snap-active { outline: 2px solid rgba(0,122,204,0.8); outline-offset: 3px; }
         .cap-assets-label { font-size: 11px; font-weight: 600; color: var(--text-dim); }
         .cap-assets-list-wrap { display: flex; flex-direction: column; gap: 6px; }
         #cap-opt-assets-list { display: flex; flex-direction: column; gap: 4px; }
@@ -11546,6 +11547,8 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
         let captureCardPositions = {};
         let captureCardZIndices = {};
         let maxZIndex = 100;
+        let captureUserZoom = 1.0;
+        let captureCurrentScale = 1.0;
 
         function adjustPreviewScale() {
             const container = document.getElementById('capture-preview-container');
@@ -11554,17 +11557,19 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
 
             const clientW = container.clientWidth;
             if (clientW <= 0) {
+                captureCurrentScale = 0.1;
                 card.style.transform = 'scale(0.1)';
                 card.style.transformOrigin = 'top center';
                 return;
             }
 
-            // Only scale by width – height is dynamic and grows with content
+            // Auto-fit scale × user zoom
             const availW = Math.max(0, clientW - 64);
-            const scale = Math.max(0.1, Math.min(availW / 1200, 1));
+            const autoScale = Math.max(0.05, Math.min(availW / 1200, 1));
+            const finalScale = Math.max(0.05, autoScale * captureUserZoom);
+            captureCurrentScale = finalScale;
 
-            card.style.transform = `scale(${scale})`;
-            // Push the transform-origin to top-center so the card grows downward
+            card.style.transform = `scale(${finalScale})`;
             card.style.transformOrigin = 'top center';
         }
 
@@ -12078,17 +12083,46 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                         const now = performance.now();
                         const dt = Math.max(now - lastTime, 1);
 
-                        // EMA velocity in px/frame (at 60fps base)
+                        // Scale-correct: mouse delta is in screen px, card coords are in canvas px
+                        const sc = captureCurrentScale || 1;
                         const alpha = 0.72;
-                        velX = alpha * velX + (1 - alpha) * ((currentX - lastX) / dt * 16);
-                        velY = alpha * velY + (1 - alpha) * ((currentY - lastY) / dt * 16);
+                        velX = alpha * velX + (1 - alpha) * ((currentX - lastX) / dt * 16 / sc);
+                        velY = alpha * velY + (1 - alpha) * ((currentY - lastY) / dt * 16 / sc);
 
                         lastX = currentX;
                         lastY = currentY;
                         lastTime = now;
 
-                        const newX = initialPos.x + (currentX - startX);
-                        const newY = initialPos.y + (currentY - startY);
+                        const rawX = initialPos.x + (currentX - startX) / sc;
+                        const rawY = initialPos.y + (currentY - startY) / sc;
+
+                        // Edge-snap against all other cards (threshold in canvas px)
+                        const SNAP = 18 / sc;
+                        const W = dragEl.offsetWidth;
+                        const H = dragEl.offsetHeight;
+                        let bestSnapX = null, bestDistX = SNAP;
+                        let bestSnapY = null, bestDistY = SNAP;
+
+                        Object.entries(captureCardPositions).forEach(([otherId, otherPos]) => {
+                            if (otherId === cardId) return;
+                            const otherEl = card.querySelector('[data-card-id="' + otherId.replace(/"/g, '\\"') + '"]');
+                            if (!otherEl) return;
+                            const OW = otherEl.offsetWidth, OH = otherEl.offsetHeight;
+                            const ox = otherPos.x, oy = otherPos.y;
+
+                            [[ox, Math.abs(rawX - ox)], [ox + OW, Math.abs(rawX - (ox + OW))],
+                             [ox - W, Math.abs((rawX + W) - ox)], [ox + OW - W, Math.abs((rawX + W) - (ox + OW))]
+                            ].forEach(([snap, dist]) => { if (dist < bestDistX) { bestDistX = dist; bestSnapX = snap; } });
+
+                            [[oy, Math.abs(rawY - oy)], [oy + OH, Math.abs(rawY - (oy + OH))],
+                             [oy - H, Math.abs((rawY + H) - oy)], [oy + OH - H, Math.abs((rawY + H) - (oy + OH))]
+                            ].forEach(([snap, dist]) => { if (dist < bestDistY) { bestDistY = dist; bestSnapY = snap; } });
+                        });
+
+                        const newX = bestSnapX !== null ? bestSnapX : rawX;
+                        const newY = bestSnapY !== null ? bestSnapY : rawY;
+                        dragEl.classList.toggle('cap-snap-active', bestSnapX !== null || bestSnapY !== null);
+
                         captureCardPositions[cardId] = { x: newX, y: newY };
                         dragEl.style.transform = `translate(${newX}px, ${newY}px) scale(1.04)`;
                     };
@@ -12102,6 +12136,7 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                         dragEl.style.cursor = 'grab';
                         if (titlebar !== dragEl) titlebar.style.cursor = 'grab';
                         iframes.forEach(iframe => iframe.style.pointerEvents = '');
+                        dragEl.classList.remove('cap-snap-active');
 
                         // Momentum glide + scale spring back, both animated per-frame
                         const friction = 0.87;
@@ -12508,6 +12543,43 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                     }
 
                     window.addEventListener('resize', adjustPreviewScale);
+
+                    // Scroll-to-zoom on capture canvas
+                    const _prevCont = document.getElementById('capture-preview-container');
+                    if (_prevCont) {
+                        // Floating zoom badge
+                        const _zoomBadge = document.createElement('div');
+                        _zoomBadge.id = 'cap-zoom-badge';
+                        _zoomBadge.style.cssText = 'position:absolute;bottom:14px;right:14px;background:rgba(0,0,0,0.65);color:#fff;font-size:11px;font-family:monospace;padding:3px 8px;border-radius:4px;pointer-events:none;opacity:0;transition:opacity 0.25s;z-index:9999;';
+                        if (getComputedStyle(_prevCont).position === 'static') _prevCont.style.position = 'relative';
+                        _prevCont.appendChild(_zoomBadge);
+
+                        const _showZoom = () => {
+                            _zoomBadge.textContent = `${Math.round(captureUserZoom * 100)}%`;
+                            _zoomBadge.style.opacity = '1';
+                            clearTimeout(_zoomBadge._t);
+                            _zoomBadge._t = setTimeout(() => { _zoomBadge.style.opacity = '0'; }, 1600);
+                        };
+
+                        _prevCont.addEventListener('wheel', (e) => {
+                            e.preventDefault();
+                            const delta = e.deltaY < 0 ? 0.08 : -0.08;
+                            captureUserZoom = Math.max(0.1, Math.min(4.0, captureUserZoom + delta));
+                            adjustPreviewScale();
+                            _showZoom();
+                        }, { passive: false });
+
+                        // Double-click empty canvas area to reset zoom
+                        _prevCont.addEventListener('dblclick', (e) => {
+                            const t = e.target;
+                            if (t === _prevCont || t.id === 'capture-preview-card') {
+                                captureUserZoom = 1.0;
+                                adjustPreviewScale();
+                                _showZoom();
+                            }
+                        });
+                    }
+
                     captureModalInited = true;
                 }
 
@@ -12577,6 +12649,18 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                 const actualW = card.scrollWidth || card.offsetWidth || 1200;
                 const actualH = card.scrollHeight || card.offsetHeight || 800;
 
+                // Collect Prism token CSS rules before cloning (stylesheet access may throw cross-origin)
+                const _prismRules = [];
+                Array.from(document.styleSheets).forEach(sheet => {
+                    try {
+                        Array.from(sheet.cssRules || []).forEach(rule => {
+                            if (rule.selectorText && rule.selectorText.includes('.token')) {
+                                _prismRules.push(rule.selectorText + '{' + rule.style.cssText + '}');
+                            }
+                        });
+                    } catch (_) {}
+                });
+
                 const canvas = await html2canvas(card, {
                     width: actualW,
                     height: actualH,
@@ -12584,7 +12668,19 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                     logging: false,
                     useCORS: true,
                     allowTaint: true,
-                    backgroundColor: bgStyle === 'transparent' ? null : undefined
+                    backgroundColor: bgStyle === 'transparent' ? null : undefined,
+                    onclone: (clonedDoc) => {
+                        // Strip ALL app stylesheets — capture cards use inline styles exclusively.
+                        // html2canvas's CSS parser chokes on CSS custom properties and complex values
+                        // in CLEO's main <style> tag, producing "unexpected EOF" errors.
+                        clonedDoc.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => el.remove());
+                        // Re-inject minimal Prism token rules so syntax highlighting survives
+                        if (_prismRules.length) {
+                            const s = clonedDoc.createElement('style');
+                            s.textContent = _prismRules.join('\n');
+                            clonedDoc.head.appendChild(s);
+                        }
+                    }
                 });
 
                 // Restore scale transform
