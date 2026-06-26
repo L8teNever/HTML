@@ -7709,18 +7709,52 @@ console.log('App geladen ✨');
 
             // HTML language settings: format on type, etc.
             monaco.languages.html.htmlDefaults.setOptions({
-                format: { tabSize: 2, insertSpaces: true, wrapLineLength: 120, unformatted: 'a, b, i, span, em, strong, code' },
+                format: {
+                    tabSize: 2,
+                    insertSpaces: true,
+                    wrapLineLength: 120,
+                    unformatted: '',
+                    indentInnerHtml: true,
+                    preserveNewLines: true,
+                    maxPreserveNewLines: 2,
+                    wrapAttributes: 'auto',
+                    endWithNewline: true,
+                    extraLiners: 'head, body, /html'
+                },
                 suggest: { html5: true },
                 autoClosingTags: true,
             });
             monaco.languages.css.cssDefaults.setOptions({
                 validate: true,
-                lint: { unknownProperties: 'warning', unknownVendorSpecificProperties: 'ignore' }
+                lint: { unknownProperties: 'warning', unknownVendorSpecificProperties: 'ignore' },
+                format: {
+                    newlineBetweenSelectors: true,
+                    newlineBetweenRules: true,
+                    spaceAroundSelectorSeparator: true
+                }
             });
             monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
                 noSemanticValidation: true,
                 noSyntaxValidation: false,
             });
+            const jsFmtOpts = {
+                tabSize: 2,
+                insertSpaces: true,
+                trimTrailingWhitespace: true,
+                insertSpaceAfterConstructor: true,
+                insertSpaceAfterCommaDelimiter: true,
+                insertSpaceAfterSemicolonInForStatement: true,
+                insertSpaceBeforeAndAfterBinaryOperators: true,
+                insertSpaceAfterKeywordsInControlFlowStatements: true,
+                insertSpaceAfterFunctionKeywordForAnonymousFunctions: true,
+                insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis: false,
+                insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets: false,
+                insertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces: false,
+                placeOpenBraceOnNewLineForFunctions: false,
+                placeOpenBraceOnNewLineForControlBlocks: false,
+            };
+            monaco.languages.typescript.javascriptDefaults.setFormatOptions(jsFmtOpts);
+            monaco.languages.typescript.typescriptDefaults.setFormatOptions(jsFmtOpts);
 
             // Register command to open file from command link in hover card
             try {
@@ -8182,6 +8216,7 @@ console.log('App geladen ✨');
                         insertMode: 'insert',
                     },
                     formatOnPaste: true,
+                    formatOnType: true,
                     renderWhitespace: 'selection',
                     stickyScroll: { enabled: false },
                     contextmenu: false,
@@ -8264,6 +8299,9 @@ console.log('App geladen ✨');
                 });
                 // Save / Run
                 editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, async () => {
+                    if (formatOnSave) {
+                        await editor.getAction('editor.action.formatDocument')?.run();
+                    }
                     // If a live connection is active, force-flush every dirty file to disk
                     if (liveDirHandle || fileHandles.size > 0) {
                         const ok = await flushAllLiveFiles();
@@ -11483,10 +11521,20 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
         })();
 
         // Override Ctrl+S to respect formatOnSave toggle
-        window.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's' && editor) {
-                if (formatOnSave) {
-                    editor.getAction('editor.action.formatDocument')?.run();
+        window.addEventListener('keydown', async (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (editor) {
+                    if (formatOnSave) {
+                        await editor.getAction('editor.action.formatDocument')?.run();
+                    }
+                    // If a live connection is active, force-flush every dirty file to disk
+                    if (liveDirHandle || fileHandles.size > 0) {
+                        const ok = await flushAllLiveFiles();
+                        if (ok) flashStatus(t('liveSaved'));
+                    }
+                    refreshPreview(true);
                 }
             }
         }, { capture: true });
