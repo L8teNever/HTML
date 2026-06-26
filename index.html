@@ -13274,7 +13274,7 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                     } catch (_) {}
                 });
 
-                // Temporarily mock document.styleSheets to bypass html2canvas CSS parsing bugs (like unexpected EOF from Tailwind CDN CSS)
+                // Temporarily mock document.styleSheets to bypass html2canvas CSS parsing bugs (like unexpected EOF from CDN CSS)
                 Object.defineProperty(document, 'styleSheets', {
                     get: () => [],
                     configurable: true
@@ -13291,7 +13291,7 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                         allowTaint: true,
                         backgroundColor: bgStyle === 'transparent' ? null : undefined,
                         onclone: (clonedDoc) => {
-                            // Strip ALL app stylesheets — capture cards use inline styles exclusively.
+                            // 1. Strip ALL main document stylesheets — capture cards use inline styles exclusively.
                             clonedDoc.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => el.remove());
 
                             let prismStyleNode = null;
@@ -13313,41 +13313,32 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                                 configurable: true
                             });
 
-                            // Clean and mock iframe stylesheets to prevent parser choking inside iframe documents
+                            // 2. Clean and sandboxed iframe srcdoc contents to prevent dynamic script execution and parser choking
                             clonedDoc.querySelectorAll('iframe').forEach(iframe => {
                                 try {
-                                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                                    if (iframeDoc) {
-                                        // 1. Remove Tailwind style elements to be safe
-                                        iframeDoc.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => {
-                                            const content = el.textContent || '';
-                                            const href = el.getAttribute('href') || '';
-                                            const id = el.id || '';
-                                            if (id.includes('tailwind') || href.includes('tailwind') || content.includes('*/*') || content.includes('/* ! tailwindcss')) {
+                                    // Remove allow-scripts from sandbox to prevent any runtime JavaScript or dynamic stylesheet injection
+                                    iframe.setAttribute('sandbox', 'allow-same-origin');
+                                    
+                                    const srcdoc = iframe.getAttribute('srcdoc');
+                                    if (srcdoc) {
+                                        const parser = new DOMParser();
+                                        const doc = parser.parseFromString(srcdoc, 'text/html');
+                                        
+                                        // Remove all scripts
+                                        doc.querySelectorAll('script').forEach(el => el.remove());
+                                        
+                                        // Remove all external stylesheet link tags
+                                        doc.querySelectorAll('link[rel="stylesheet"]').forEach(el => el.remove());
+                                        
+                                        // Remove non-local style elements (user files style rules have data-source attribute)
+                                        doc.querySelectorAll('style').forEach(el => {
+                                            if (!el.hasAttribute('data-source')) {
                                                 el.remove();
                                             }
                                         });
-
-                                        // 2. Mock iframeDoc.styleSheets to filter out Tailwind and other potential problematic stylesheets
-                                        const originalIframeSheets = iframeDoc.styleSheets;
-                                        Object.defineProperty(iframeDoc, 'styleSheets', {
-                                            get: () => {
-                                                return Array.from(originalIframeSheets).filter(sheet => {
-                                                    try {
-                                                        if (sheet.ownerNode) {
-                                                            const id = sheet.ownerNode.id || '';
-                                                            const href = sheet.ownerNode.getAttribute?.('href') || '';
-                                                            const content = sheet.ownerNode.textContent || '';
-                                                            if (id.includes('tailwind') || href.includes('tailwind') || content.includes('*/*') || content.includes('/* ! tailwindcss')) {
-                                                                return false;
-                                                            }
-                                                        }
-                                                    } catch (_) {}
-                                                    return true;
-                                                });
-                                            },
-                                            configurable: true
-                                        });
+                                        
+                                        // Serialize cleaned HTML back to the cloned iframe's srcdoc
+                                        iframe.setAttribute('srcdoc', doc.documentElement.outerHTML);
                                     }
                                 } catch (_) {}
                             });
