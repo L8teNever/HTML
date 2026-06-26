@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <title>CLEO — Editor & Live Preview</title>
 
     <!-- ===== PWA ===== -->
@@ -3652,8 +3652,8 @@
             /* Resize handles — wider hit area for touch */
             .resize-handle { min-width: 16px; }
 
-            /* Activity bar — slightly bigger icons */
-            .act-btn { width: 52px; height: 52px; }
+            /* Activity bar — bigger icons (keep 48px width = column width) */
+            .act-btn { height: 52px; }
             .act-btn svg { width: 28px; height: 28px; }
 
             /* Modal — fit small screens */
@@ -9599,6 +9599,7 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
             window.addEventListener('mouseup', onUp);
             window.addEventListener('touchmove', onMove, { passive: false });
             window.addEventListener('touchend', onUp);
+            window.addEventListener('touchcancel', onUp);
             window.addEventListener('resize', clampCols);
 
             // Restore from storage
