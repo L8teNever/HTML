@@ -13274,6 +13274,26 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                     } catch (_) {}
                 });
 
+                // Backup original methods
+                const originalQuerySelectorAll = document.querySelectorAll;
+                const originalGetElementsByTagName = document.getElementsByTagName;
+
+                // Mock querySelectorAll to hide style/link elements from html2canvas resource parser
+                document.querySelectorAll = function(selector) {
+                    if (typeof selector === 'string' && (selector.includes('style') || selector.includes('link'))) {
+                        return originalQuerySelectorAll.call(document, 'div.non-existent-class-for-mock');
+                    }
+                    return originalQuerySelectorAll.apply(this, arguments);
+                };
+
+                // Mock getElementsByTagName to hide style/link elements from html2canvas resource parser
+                document.getElementsByTagName = function(tagName) {
+                    if (typeof tagName === 'string' && (tagName.toLowerCase() === 'style' || tagName.toLowerCase() === 'link')) {
+                        return originalGetElementsByTagName.call(document, 'non-existent-tag-mock');
+                    }
+                    return originalGetElementsByTagName.apply(this, arguments);
+                };
+
                 // Temporarily mock document.styleSheets to bypass html2canvas CSS parsing bugs (like unexpected EOF from CDN CSS)
                 Object.defineProperty(document, 'styleSheets', {
                     get: () => [],
@@ -13288,7 +13308,7 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                         scale: 2,
                         logging: false,
                         useCORS: true,
-                        allowTaint: true,
+                        allowTaint: false, // MUST be false to prevent SecurityError (Tainted Canvas) crashes
                         backgroundColor: bgStyle === 'transparent' ? null : undefined,
                         onclone: (clonedDoc) => {
                             // 1. Strip ALL main document stylesheets — capture cards use inline styles exclusively.
@@ -13345,7 +13365,9 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                         }
                     });
                 } finally {
-                    // Restore original document.styleSheets
+                    // Restore original document functions and properties
+                    document.querySelectorAll = originalQuerySelectorAll;
+                    document.getElementsByTagName = originalGetElementsByTagName;
                     delete document.styleSheets;
                 }
 
