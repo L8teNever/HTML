@@ -7753,8 +7753,14 @@ console.log('App geladen ✨');
                 placeOpenBraceOnNewLineForFunctions: false,
                 placeOpenBraceOnNewLineForControlBlocks: false,
             };
-            monaco.languages.typescript.javascriptDefaults.setFormatOptions(jsFmtOpts);
-            monaco.languages.typescript.typescriptDefaults.setFormatOptions(jsFmtOpts);
+            if (monaco.languages.typescript) {
+                if (monaco.languages.typescript.javascriptDefaults && typeof monaco.languages.typescript.javascriptDefaults.setFormatOptions === 'function') {
+                    monaco.languages.typescript.javascriptDefaults.setFormatOptions(jsFmtOpts);
+                }
+                if (monaco.languages.typescript.typescriptDefaults && typeof monaco.languages.typescript.typescriptDefaults.setFormatOptions === 'function') {
+                    monaco.languages.typescript.typescriptDefaults.setFormatOptions(jsFmtOpts);
+                }
+            }
 
             // Register command to open file from command link in hover card
             try {
