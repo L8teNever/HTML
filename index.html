@@ -8318,9 +8318,13 @@ console.log('App geladen ✨');
                     openNewFileModal('file');
                 });
             }
+            // Un-hide Monaco DOM if it was hidden by Start/Settings/Screenshot tab
+            const _edDom = document.querySelector('#editor-host > .monaco-editor');
+            if (_edDom) _edDom.style.display = '';
             const m = ensureModel(name);
             editor.setModel(m);
             editor.focus();
+            editor.layout();
             updateProblemCount(m);
         }
 
