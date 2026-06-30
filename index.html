@@ -13309,15 +13309,24 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
             detail.textContent = t('captureExportingDetail');
             loader.classList.add('visible');
 
-            try {
-                // Temporarily disable scaling transform to capture at full resolution
-                const oldTransform = card.style.transform;
-                card.style.transform = 'none';
+            const oldTransform = card.style.transform;
+            let domRestored = false;
+            const originalQuerySelectorAll = document.querySelectorAll;
+            const originalGetElementsByTagName = document.getElementsByTagName;
 
-                // Allow 100ms for browser paint loops to settle
+            function restoreDOM() {
+                if (domRestored) return;
+                domRestored = true;
+                document.querySelectorAll = originalQuerySelectorAll;
+                document.getElementsByTagName = originalGetElementsByTagName;
+                try { delete document.styleSheets; } catch (_) {}
+                card.style.transform = oldTransform;
+            }
+
+            try {
+                card.style.transform = 'none';
                 await new Promise(r => setTimeout(r, 100));
 
-                // Use actual rendered dimensions – no hard-coded 16:9 constraint
                 const actualW = card.scrollWidth || card.offsetWidth || 1200;
                 const actualH = card.scrollHeight || card.offsetHeight || 800;
 
@@ -13332,10 +13341,6 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                         });
                     } catch (_) {}
                 });
-
-                // Backup original methods
-                const originalQuerySelectorAll = document.querySelectorAll;
-                const originalGetElementsByTagName = document.getElementsByTagName;
 
                 // Mock querySelectorAll to hide style/link elements from html2canvas resource parser
                 document.querySelectorAll = function(selector) {
@@ -13353,7 +13358,7 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                     return originalGetElementsByTagName.apply(this, arguments);
                 };
 
-                // Temporarily mock document.styleSheets to bypass html2canvas CSS parsing bugs (like unexpected EOF from CDN CSS)
+                // Temporarily mock document.styleSheets to bypass html2canvas CSS parsing bugs
                 Object.defineProperty(document, 'styleSheets', {
                     get: () => [],
                     configurable: true
@@ -13370,18 +13375,15 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                         allowTaint: false, // MUST be false to prevent SecurityError (Tainted Canvas) crashes
                         backgroundColor: bgStyle === 'transparent' ? null : undefined,
                         onclone: (clonedDoc) => {
-                            // 1. Strip ALL main document stylesheets — capture cards use inline styles exclusively.
                             clonedDoc.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => el.remove());
 
                             let prismStyleNode = null;
-                            // Re-inject minimal Prism token rules so syntax highlighting survives
                             if (_prismRules.length) {
                                 prismStyleNode = clonedDoc.createElement('style');
                                 prismStyleNode.textContent = _prismRules.join('\n');
                                 clonedDoc.head.appendChild(prismStyleNode);
                             }
 
-                            // Mock clonedDoc.styleSheets to return only the newly injected Prism style
                             Object.defineProperty(clonedDoc, 'styleSheets', {
                                 get: () => {
                                     if (prismStyleNode && prismStyleNode.sheet) {
@@ -13392,31 +13394,18 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                                 configurable: true
                             });
 
-                            // 2. Clean and sandboxed iframe srcdoc contents to prevent dynamic script execution and parser choking
                             clonedDoc.querySelectorAll('iframe').forEach(iframe => {
                                 try {
-                                    // Remove allow-scripts from sandbox to prevent any runtime JavaScript or dynamic stylesheet injection
                                     iframe.setAttribute('sandbox', 'allow-same-origin');
-                                    
                                     const srcdoc = iframe.getAttribute('srcdoc');
                                     if (srcdoc) {
                                         const parser = new DOMParser();
                                         const doc = parser.parseFromString(srcdoc, 'text/html');
-                                        
-                                        // Remove all scripts
                                         doc.querySelectorAll('script').forEach(el => el.remove());
-                                        
-                                        // Remove all external stylesheet link tags
                                         doc.querySelectorAll('link[rel="stylesheet"]').forEach(el => el.remove());
-                                        
-                                        // Remove non-local style elements (user files style rules have data-source attribute)
                                         doc.querySelectorAll('style').forEach(el => {
-                                            if (!el.hasAttribute('data-source')) {
-                                                el.remove();
-                                            }
+                                            if (!el.hasAttribute('data-source')) el.remove();
                                         });
-                                        
-                                        // Serialize cleaned HTML back to the cloned iframe's srcdoc
                                         iframe.setAttribute('srcdoc', doc.documentElement.outerHTML);
                                     }
                                 } catch (_) {}
@@ -13424,21 +13413,31 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                         }
                     });
                 } finally {
-                    // Restore original document functions and properties
-                    document.querySelectorAll = originalQuerySelectorAll;
-                    document.getElementsByTagName = originalGetElementsByTagName;
-                    delete document.styleSheets;
+                    restoreDOM();
                 }
 
-                // Restore scale transform
-                card.style.transform = oldTransform;
-
-                // Download PNG
-                const downloadLink = document.createElement('a');
-                downloadLink.download = `cleo-snapshot-${(activeTab !== 'Screenshot' && activeTab !== 'Settings' && activeTab !== 'Start' ? activeTab : lastActiveFile).replace(/\//g, '_')}.png`;
-                downloadLink.href = canvas.toDataURL('image/png');
-                downloadLink.click();
+                // Use toBlob() — memory-efficient, works for large images, no data-URL size limits
+                const filename = `cleo-snapshot-${(activeTab !== 'Screenshot' && activeTab !== 'Settings' && activeTab !== 'Start' ? activeTab : lastActiveFile).replace(/\//g, '_')}.png`;
+                await new Promise((resolve, reject) => {
+                    canvas.toBlob(blob => {
+                        if (!blob) { reject(new Error('toBlob returned null')); return; }
+                        const blobUrl = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = blobUrl;
+                        a.download = filename;
+                        a.style.display = 'none';
+                        document.body.appendChild(a);
+                        a.click();
+                        // Delay revoke so browser has time to start the download
+                        setTimeout(() => {
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(blobUrl);
+                            resolve();
+                        }, 1000);
+                    }, 'image/png');
+                });
             } catch (err) {
+                restoreDOM();
                 console.error('Snapshot export failed:', err);
                 alert(t('captureExportFailed') + ': ' + err.message);
             } finally {
