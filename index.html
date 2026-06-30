@@ -8233,7 +8233,105 @@ console.log('App geladen ✨');
                     handleItemDidShow: () => { },
                 };
             }
-                     // HTML emmet-ish snippets and empty document boilerplates
+            monaco.languages.registerInlineCompletionsProvider('html', makeInlineProvider('html'));
+            monaco.languages.registerInlineCompletionsProvider('css', makeInlineProvider('css'));
+            monaco.languages.registerInlineCompletionsProvider('javascript', makeInlineProvider('javascript'));
+
+            /* ---------- Closing tag auto-complete (</… → </tagname>) ---------- */
+            function findUnclosedTag(model, position) {
+                // Collect all text up to cursor as one string
+                const voids = new Set(['img','br','hr','input','meta','link','source','track','wbr','col','area','embed','base','param','keygen','command']);
+                let text = '';
+                for (let ln = 1; ln < position.lineNumber; ln++) {
+                    text += model.getLineContent(ln) + '\n';
+                }
+                text += model.getLineContent(position.lineNumber).slice(0, position.column - 1);
+
+                // Simple stack-based parser: match <tag …> and </tag>
+                const stack = [];
+                const openRe = /<([a-zA-Z][a-zA-Z0-9-]*)(?:\s[^>]*)?\s*\/?>/g;
+                const closeRe = /<\/([a-zA-Z][a-zA-Z0-9-]*)\s*>/g;
+
+                // Parse all tokens in order
+                const tokens = [];
+                let m;
+                openRe.lastIndex = 0;
+                while ((m = openRe.exec(text)) !== null) {
+                    const tag = m[1].toLowerCase();
+                    // self-closing or void: skip
+                    if (voids.has(tag) || m[0].endsWith('/>')) continue;
+                    tokens.push({ type: 'open', tag, idx: m.index });
+                }
+                closeRe.lastIndex = 0;
+                while ((m = closeRe.exec(text)) !== null) {
+                    tokens.push({ type: 'close', tag: m[1].toLowerCase(), idx: m.index });
+                }
+                tokens.sort((a, b) => a.idx - b.idx);
+
+                for (const tok of tokens) {
+                    if (tok.type === 'open') {
+                        stack.push(tok.tag);
+                    } else {
+                        // pop matching tag from top
+                        for (let i = stack.length - 1; i >= 0; i--) {
+                            if (stack[i] === tok.tag) { stack.splice(i, 1); break; }
+                        }
+                    }
+                }
+                // Return the innermost unclosed tag
+                return stack.length > 0 ? stack[stack.length - 1] : null;
+            }
+
+            monaco.languages.registerCompletionItemProvider('html', {
+                triggerCharacters: ['/', '<'],
+                provideCompletionItems: (model, position) => {
+                    const line = model.getLineContent(position.lineNumber);
+                    const before = line.slice(0, position.column - 1);
+
+                    // Only fire when user typed `</` or `</partial`
+                    const closeMatch = before.match(/<\/([a-zA-Z0-9-]*)$/);
+                    if (!closeMatch) return { suggestions: [] };
+
+                    const typed = closeMatch[1].toLowerCase();
+                    const startCol = position.column - closeMatch[0].length;
+
+                    // Find unclosed tag and build suggestion list
+                    // Also collect all unique open tags in document for secondary suggestions
+                    const primary = findUnclosedTag(model, position);
+                    const suggestions = [];
+
+                    if (primary && (!typed || primary.startsWith(typed))) {
+                        suggestions.push({
+                            label: `</${primary}>`,
+                            kind: monaco.languages.CompletionItemKind.Snippet,
+                            insertText: `</${primary}>`,
+                            detail: '⬆ Nächster offener Tag',
+                            sortText: '0',
+                            range: new monaco.Range(position.lineNumber, startCol, position.lineNumber, position.column),
+                            preselect: true,
+                        });
+                    }
+
+                    // Also add all known HTML tags as fallback (filtered by typed prefix)
+                    const ALL_CLOSE_TAGS = ['html','head','body','div','span','p','a','section','article','header','footer','nav','main','aside','ul','ol','li','h1','h2','h3','h4','h5','h6','button','form','label','select','option','textarea','table','thead','tbody','tr','th','td','script','style','title','pre','code','blockquote','figure','figcaption','strong','em','b','i','u','small','details','summary','dialog','template','slot','picture','video','audio','canvas','svg','iframe','noscript','time','mark','sub','sup','cite','abbr','address','caption','col','colgroup','datalist','fieldset','legend','optgroup','output','progress','meter','ruby','rt','rp','wbr','s','del','ins','dfn','kbd','samp','var','data','object','dd','dl','dt'];
+                    ALL_CLOSE_TAGS.forEach((tag, i) => {
+                        if (tag === primary) return; // already added
+                        if (typed && !tag.startsWith(typed)) return;
+                        suggestions.push({
+                            label: `</${tag}>`,
+                            kind: monaco.languages.CompletionItemKind.Keyword,
+                            insertText: `</${tag}>`,
+                            detail: 'HTML schließen',
+                            sortText: '1_' + String(i).padStart(3, '0'),
+                            range: new monaco.Range(position.lineNumber, startCol, position.lineNumber, position.column),
+                        });
+                    });
+
+                    return { suggestions };
+                }
+            });
+
+            // HTML emmet-ish snippets and empty document boilerplates
             monaco.languages.registerCompletionItemProvider('html', {
                 triggerCharacters: ['!'],
                 provideCompletionItems: (model, position) => {
@@ -8301,17 +8399,8 @@ console.log('App geladen ✨');
                 }
             });
             monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
-                noSemanticValidation: false,
+                noSemanticValidation: true,
                 noSyntaxValidation: false,
-                diagnosticCodesToIgnore: [
-                    2304, // Cannot find name '...' (suppress for browser globals not in lib)
-                    2339, // Property '...' does not exist — too noisy without full type info
-                    2345, // Argument not assignable — too noisy without types
-                    2322, // Type not assignable
-                    7006, // implicit any param
-                    7005, // Variable '...' implicitly has an 'any' type
-                    7034, // Variable implicitly has type 'any' in some locations
-                ],
             });
             // Enable full DOM + ES2022 IntelliSense (same as VS Code default for JS)
             monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
