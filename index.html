@@ -7013,13 +7013,10 @@ console.log('App geladen ✨');
         const INLINE_RULES = {
             html: [
                 // Partial open tag → close it. `<h1` → `></h1>`, `<div` → `></div>`, void tags → ` />`
-                [/<(\w+)$/i, (m, ctx) => {
+                [/<(\w+)$/i, (m) => {
                     const tag = m[1].toLowerCase();
-                    const voids = ['img', 'br', 'hr', 'input', 'meta', 'link', 'source', 'track', 'wbr', 'col'];
-                    if (voids.includes(tag)) return ' />';
-                    // common tags that should be auto-closed
-                    const known = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div', 'span', 'section', 'article', 'header', 'footer', 'main', 'nav', 'aside', 'ul', 'ol', 'li', 'a', 'button', 'form', 'label', 'select', 'option', 'textarea', 'table', 'thead', 'tbody', 'tr', 'td', 'th', 'strong', 'em', 'code', 'pre', 'blockquote', 'figure', 'figcaption', 'small', 'b', 'i', 'u', 'title', 'script', 'style'];
-                    if (!known.includes(tag)) return null;
+                    const voids = new Set(['img','br','hr','input','meta','link','source','track','wbr','col','area','embed','base','param','keygen','command']);
+                    if (voids.has(tag)) return ' />';
                     return `></${tag}>`;
                 }],
                 // After "<tag " (with space) suggest attributes for that tag
@@ -7280,6 +7277,576 @@ console.log('App geladen ✨');
             monaco.languages.registerCompletionItemProvider('html', makeSnippetProvider('html', HTML_SNIPPETS));
             monaco.languages.registerCompletionItemProvider('css', makeSnippetProvider('css', CSS_SNIPPETS));
             monaco.languages.registerCompletionItemProvider('javascript', makeSnippetProvider('javascript', JS_SNIPPETS));
+
+            /* ---------- HTML Attribute completions (inside <tag …>) ---------- */
+            const UNIVERSAL_ATTRS = [
+                ['id', 'string', 'id="${1:name}"'],
+                ['class', 'string', 'class="${1:name}"'],
+                ['style', 'string', 'style="${1:}"'],
+                ['hidden', 'boolean', 'hidden'],
+                ['title', 'string', 'title="${1:}"'],
+                ['tabindex', 'number', 'tabindex="${1:0}"'],
+                ['contenteditable', 'boolean', 'contenteditable="true"'],
+                ['draggable', 'boolean', 'draggable="true"'],
+                ['data-*', 'string', 'data-${1:key}="${2:value}"'],
+                ['aria-label', 'string', 'aria-label="${1:}"'],
+                ['aria-hidden', 'boolean', 'aria-hidden="true"'],
+                ['aria-expanded', 'boolean', 'aria-expanded="false"'],
+                ['aria-disabled', 'boolean', 'aria-disabled="false"'],
+                ['aria-controls', 'string', 'aria-controls="${1:id}"'],
+                ['aria-describedby', 'string', 'aria-describedby="${1:id}"'],
+                ['aria-live', 'string', 'aria-live="polite"'],
+                ['role', 'string', 'role="${1:button}"'],
+                ['onclick', 'event', 'onclick="${1:}"'],
+                ['ondblclick', 'event', 'ondblclick="${1:}"'],
+                ['onmouseenter', 'event', 'onmouseenter="${1:}"'],
+                ['onmouseleave', 'event', 'onmouseleave="${1:}"'],
+                ['onkeydown', 'event', 'onkeydown="${1:}"'],
+                ['onkeyup', 'event', 'onkeyup="${1:}"'],
+                ['onchange', 'event', 'onchange="${1:}"'],
+                ['oninput', 'event', 'oninput="${1:}"'],
+                ['onfocus', 'event', 'onfocus="${1:}"'],
+                ['onblur', 'event', 'onblur="${1:}"'],
+                ['onsubmit', 'event', 'onsubmit="${1:}"'],
+            ];
+            const TAG_ATTRS = {
+                a:        [['href','string','href="${1:#}"'],['target','string','target="${1:_blank}"'],['rel','string','rel="noopener noreferrer"'],['download','string','download'],['hreflang','string','hreflang="${1:de}"']],
+                img:      [['src','string','src="${1:}"'],['alt','string','alt="${1:}"'],['width','number','width="${1:}"'],['height','number','height="${1:}"'],['loading','string','loading="lazy"'],['decoding','string','decoding="async"'],['crossorigin','string','crossorigin="anonymous"']],
+                input:    [['type','string','type="${1:text}"'],['name','string','name="${1:}"'],['value','string','value="${1:}"'],['placeholder','string','placeholder="${1:}"'],['required','boolean','required'],['disabled','boolean','disabled'],['readonly','boolean','readonly'],['checked','boolean','checked'],['min','number','min="${1:0}"'],['max','number','max="${1:100}"'],['step','number','step="${1:1}"'],['pattern','string','pattern="${1:}"'],['autocomplete','string','autocomplete="off"'],['autofocus','boolean','autofocus'],['maxlength','number','maxlength="${1:255}"']],
+                button:   [['type','string','type="${1:button}"'],['disabled','boolean','disabled'],['form','string','form="${1:id}"'],['name','string','name="${1:}"'],['value','string','value="${1:}"'],['autofocus','boolean','autofocus']],
+                form:     [['action','string','action="${1:}"'],['method','string','method="${1:post}"'],['enctype','string','enctype="multipart/form-data"'],['novalidate','boolean','novalidate'],['autocomplete','string','autocomplete="off"'],['target','string','target="${1:_self}"']],
+                label:    [['for','string','for="${1:id}"'],['form','string','form="${1:id}"']],
+                select:   [['name','string','name="${1:}"'],['required','boolean','required'],['disabled','boolean','disabled'],['multiple','boolean','multiple'],['size','number','size="${1:1}"'],['form','string','form="${1:id}"']],
+                textarea: [['name','string','name="${1:}"'],['rows','number','rows="${1:4}"'],['cols','number','cols="${1:40}"'],['placeholder','string','placeholder="${1:}"'],['required','boolean','required'],['disabled','boolean','disabled'],['readonly','boolean','readonly'],['maxlength','number','maxlength="${1:}"'],['wrap','string','wrap="soft"']],
+                link:     [['rel','string','rel="${1:stylesheet}"'],['href','string','href="${1:}"'],['type','string','type="text/css"'],['media','string','media="${1:all}"'],['crossorigin','string','crossorigin="anonymous"'],['integrity','string','integrity="${1:}"'],['as','string','as="${1:style}"']],
+                script:   [['src','string','src="${1:}"'],['type','string','type="module"'],['async','boolean','async'],['defer','boolean','defer'],['crossorigin','string','crossorigin="anonymous"'],['integrity','string','integrity="${1:}"'],['nomodule','boolean','nomodule']],
+                meta:     [['name','string','name="${1:description}"'],['content','string','content="${1:}"'],['charset','string','charset="utf-8"'],['http-equiv','string','http-equiv="${1:X-UA-Compatible}"'],['property','string','property="${1:og:title}"']],
+                video:    [['src','string','src="${1:}"'],['controls','boolean','controls'],['autoplay','boolean','autoplay'],['loop','boolean','loop'],['muted','boolean','muted'],['poster','string','poster="${1:}"'],['width','number','width="${1:}"'],['height','number','height="${1:}"'],['preload','string','preload="metadata"'],['playsinline','boolean','playsinline']],
+                audio:    [['src','string','src="${1:}"'],['controls','boolean','controls'],['autoplay','boolean','autoplay'],['loop','boolean','loop'],['muted','boolean','muted'],['preload','string','preload="metadata"']],
+                iframe:   [['src','string','src="${1:}"'],['srcdoc','string','srcdoc="${1:}"'],['width','number','width="${1:600}"'],['height','number','height="${1:400}"'],['allowfullscreen','boolean','allowfullscreen'],['sandbox','string','sandbox="allow-scripts allow-same-origin"'],['loading','string','loading="lazy"'],['title','string','title="${1:}"']],
+                canvas:   [['width','number','width="${1:300}"'],['height','number','height="${1:150}"']],
+                table:    [['cellpadding','number','cellpadding="${1:0}"'],['cellspacing','number','cellspacing="${1:0}"'],['border','number','border="${1:0}"']],
+                td:       [['colspan','number','colspan="${1:1}"'],['rowspan','number','rowspan="${1:1}"']],
+                th:       [['colspan','number','colspan="${1:1}"'],['rowspan','number','rowspan="${1:1}"'],['scope','string','scope="${1:col}"']],
+                ol:       [['type','string','type="${1:1}"'],['start','number','start="${1:1}"'],['reversed','boolean','reversed']],
+                details:  [['open','boolean','open']],
+                dialog:   [['open','boolean','open']],
+                source:   [['src','string','src="${1:}"'],['type','string','type="${1:video/mp4}"'],['media','string','media="${1:}"'],['srcset','string','srcset="${1:}"'],['sizes','string','sizes="${1:}"']],
+                track:    [['src','string','src="${1:}"'],['kind','string','kind="subtitles"'],['srclang','string','srclang="${1:de}"'],['label','string','label="${1:}"'],['default','boolean','default']],
+                area:     [['href','string','href="${1:}"'],['alt','string','alt="${1:}"'],['shape','string','shape="${1:rect}"'],['coords','string','coords="${1:}"'],['target','string','target="${1:_blank}"']],
+                div:      [['id','string','id="${1:}"'],['class','string','class="${1:}"']],
+                span:     [['id','string','id="${1:}"'],['class','string','class="${1:}"']],
+                p:        [['id','string','id="${1:}"'],['class','string','class="${1:}"']],
+                section:  [['id','string','id="${1:}"'],['class','string','class="${1:}"']],
+                article:  [['id','string','id="${1:}"'],['class','string','class="${1:}"']],
+                header:   [['id','string','id="${1:}"'],['class','string','class="${1:}"']],
+                footer:   [['id','string','id="${1:}"'],['class','string','class="${1:}"']],
+                nav:      [['id','string','id="${1:}"'],['class','string','class="${1:}"']],
+                main:     [['id','string','id="${1:}"'],['class','string','class="${1:}"']],
+                aside:    [['id','string','id="${1:}"'],['class','string','class="${1:}"']],
+                html:     [['lang','string','lang="${1:de}"']],
+            };
+            const ATTR_KIND_MAP = {
+                string: monaco.languages.CompletionItemKind.Property,
+                boolean: monaco.languages.CompletionItemKind.Constant,
+                number: monaco.languages.CompletionItemKind.Value,
+                event: monaco.languages.CompletionItemKind.Event,
+            };
+
+            monaco.languages.registerCompletionItemProvider('html', {
+                triggerCharacters: [' ', '\t', '"', "'"],
+                provideCompletionItems: (model, position) => {
+                    const line = model.getLineContent(position.lineNumber);
+                    const before = line.slice(0, position.column - 1);
+                    // Must be inside an open tag: < something … not yet closed with >
+                    const tagMatch = before.match(/<([a-zA-Z][a-zA-Z0-9-]*)\s+([^>]*)$/);
+                    if (!tagMatch) return { suggestions: [] };
+                    const tagName = tagMatch[1].toLowerCase();
+                    const attrContext = tagMatch[2];
+                    // Get the partial word the user is typing (attribute name)
+                    const word = model.getWordUntilPosition(position);
+                    const range = new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn);
+                    // Build set of already-present attributes to avoid re-suggesting them
+                    const alreadyHas = new Set((attrContext.match(/[\w-]+(?=\s*=|\s|$)/g) || []).map(a => a.toLowerCase()));
+                    const tagSpecific = TAG_ATTRS[tagName] || [];
+                    const combined = [...tagSpecific, ...UNIVERSAL_ATTRS];
+                    const seen = new Set();
+                    const suggestions = [];
+                    combined.forEach(([name, type, insert], i) => {
+                        if (seen.has(name)) return; seen.add(name);
+                        if (alreadyHas.has(name) && name !== 'data-*') return;
+                        suggestions.push({
+                            label: name,
+                            kind: ATTR_KIND_MAP[type] || monaco.languages.CompletionItemKind.Property,
+                            insertText: insert,
+                            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                            detail: type === 'event' ? 'Ereignis-Handler' : type === 'boolean' ? 'Boolean-Attribut' : 'Attribut',
+                            sortText: (i < tagSpecific.length ? '0_' : '1_') + String(i).padStart(3,'0'),
+                            range,
+                        });
+                    });
+                    return { suggestions };
+                }
+            });
+
+            /* ---------- JS: dot-completions for built-in APIs ---------- */
+            const JS_DOT_COMPLETIONS = {
+                'console': [
+                    ['log', 'console.log(…)', 'log(${1:value})'],
+                    ['error', 'console.error(…)', 'error(${1:value})'],
+                    ['warn', 'console.warn(…)', 'warn(${1:value})'],
+                    ['info', 'console.info(…)', 'info(${1:value})'],
+                    ['table', 'console.table(…)', 'table(${1:value})'],
+                    ['time', 'console.time(label)', "time('${1:label}')"],
+                    ['timeEnd', 'console.timeEnd(label)', "timeEnd('${1:label}')"],
+                    ['group', 'console.group(…)', 'group(${1:label})'],
+                    ['groupEnd', 'console.groupEnd()', 'groupEnd()'],
+                    ['dir', 'console.dir(obj)', 'dir(${1:obj})'],
+                    ['clear', 'console.clear()', 'clear()'],
+                    ['assert', 'console.assert(cond, msg)', 'assert(${1:condition}, ${2:message})'],
+                    ['count', 'console.count(label)', "count('${1:default}')"],
+                    ['trace', 'console.trace()', 'trace()'],
+                ],
+                'document': [
+                    ['getElementById', 'getElementById(id)', "getElementById('${1:id}')"],
+                    ['querySelector', 'querySelector(selector)', "querySelector('${1:.class}')"],
+                    ['querySelectorAll', 'querySelectorAll(selector)', "querySelectorAll('${1:.class}')"],
+                    ['getElementsByClassName', 'getElementsByClassName(cls)', "getElementsByClassName('${1:name}')"],
+                    ['getElementsByTagName', 'getElementsByTagName(tag)', "getElementsByTagName('${1:div}')"],
+                    ['createElement', 'createElement(tag)', "createElement('${1:div}')"],
+                    ['createTextNode', 'createTextNode(text)', "createTextNode('${1:text}')"],
+                    ['createDocumentFragment', 'createDocumentFragment()', 'createDocumentFragment()'],
+                    ['addEventListener', 'addEventListener(event, handler)', "addEventListener('${1:DOMContentLoaded}', ${2:() => {\n  $0\n}})"],
+                    ['removeEventListener', 'removeEventListener(event, handler)', "removeEventListener('${1:click}', ${2:handler})"],
+                    ['dispatchEvent', 'dispatchEvent(event)', 'dispatchEvent(new Event(\'${1:change}\'))'],
+                    ['body', 'document.body', 'body'],
+                    ['head', 'document.head', 'head'],
+                    ['title', 'document.title', 'title'],
+                    ['cookie', 'document.cookie', 'cookie'],
+                    ['location', 'document.location', 'location'],
+                    ['readyState', 'document.readyState', 'readyState'],
+                    ['documentElement', 'document.documentElement', 'documentElement'],
+                    ['activeElement', 'document.activeElement', 'activeElement'],
+                    ['currentScript', 'document.currentScript', 'currentScript'],
+                    ['forms', 'document.forms', 'forms'],
+                    ['images', 'document.images', 'images'],
+                    ['links', 'document.links', 'links'],
+                    ['scripts', 'document.scripts', 'scripts'],
+                    ['execCommand', 'execCommand (deprecated)', "execCommand('${1:copy}')"],
+                    ['hasFocus', 'document.hasFocus()', 'hasFocus()'],
+                    ['createEvent', 'createEvent(type)', "createEvent('${1:Event}')"],
+                    ['importNode', 'importNode(node, deep)', 'importNode(${1:node}, ${2:true})'],
+                    ['adoptNode', 'adoptNode(node)', 'adoptNode(${1:node})'],
+                    ['write', 'document.write(…)', 'write(${1:html})'],
+                    ['writeln', 'document.writeln(…)', 'writeln(${1:html})'],
+                ],
+                'window': [
+                    ['addEventListener', 'addEventListener(event, handler)', "addEventListener('${1:load}', ${2:() => {\n  $0\n}})"],
+                    ['removeEventListener', 'removeEventListener', "removeEventListener('${1:load}', ${2:handler})"],
+                    ['setTimeout', 'setTimeout(fn, ms)', 'setTimeout(() => {\n  $0\n}, ${1:1000})'],
+                    ['setInterval', 'setInterval(fn, ms)', 'setInterval(() => {\n  $0\n}, ${1:1000})'],
+                    ['clearTimeout', 'clearTimeout(id)', 'clearTimeout(${1:id})'],
+                    ['clearInterval', 'clearInterval(id)', 'clearInterval(${1:id})'],
+                    ['requestAnimationFrame', 'requestAnimationFrame(cb)', 'requestAnimationFrame(${1:callback})'],
+                    ['cancelAnimationFrame', 'cancelAnimationFrame(id)', 'cancelAnimationFrame(${1:id})'],
+                    ['fetch', 'fetch(url, opts?)', "fetch('${1:/api}', {\n  method: '${2:GET}',\n})"],
+                    ['alert', 'alert(msg)', "alert('${1:message}')"],
+                    ['confirm', 'confirm(msg)', "confirm('${1:Sicher?}')"],
+                    ['prompt', 'prompt(msg)', "prompt('${1:Eingabe}')"],
+                    ['open', 'window.open(url)', "open('${1:url}', '${2:_blank}')"],
+                    ['close', 'window.close()', 'close()'],
+                    ['scrollTo', 'scrollTo(x, y)', 'scrollTo({ top: ${1:0}, behavior: \'smooth\' })'],
+                    ['scrollBy', 'scrollBy(x, y)', 'scrollBy({ top: ${1:0}, behavior: \'smooth\' })'],
+                    ['getComputedStyle', 'getComputedStyle(el)', 'getComputedStyle(${1:element})'],
+                    ['matchMedia', 'matchMedia(query)', "matchMedia('${1:(max-width: 768px)}')"],
+                    ['postMessage', 'postMessage(data, origin)', "postMessage(${1:data}, '${2:*}')"],
+                    ['history', 'window.history', 'history'],
+                    ['location', 'window.location', 'location'],
+                    ['navigator', 'window.navigator', 'navigator'],
+                    ['localStorage', 'window.localStorage', 'localStorage'],
+                    ['sessionStorage', 'window.sessionStorage', 'sessionStorage'],
+                    ['performance', 'window.performance', 'performance'],
+                    ['crypto', 'window.crypto', 'crypto'],
+                    ['innerWidth', 'window.innerWidth', 'innerWidth'],
+                    ['innerHeight', 'window.innerHeight', 'innerHeight'],
+                    ['devicePixelRatio', 'window.devicePixelRatio', 'devicePixelRatio'],
+                    ['queueMicrotask', 'queueMicrotask(fn)', 'queueMicrotask(${1:fn})'],
+                    ['structuredClone', 'structuredClone(val)', 'structuredClone(${1:value})'],
+                    ['btoa', 'btoa(str)', "btoa('${1:string}')"],
+                    ['atob', 'atob(str)', "atob('${1:base64}')"],
+                    ['encodeURIComponent', 'encodeURIComponent(str)', 'encodeURIComponent(${1:str})'],
+                    ['decodeURIComponent', 'decodeURIComponent(str)', 'decodeURIComponent(${1:str})'],
+                ],
+                'localStorage': [
+                    ['getItem', 'getItem(key)', "getItem('${1:key}')"],
+                    ['setItem', 'setItem(key, value)', "setItem('${1:key}', ${2:value})"],
+                    ['removeItem', 'removeItem(key)', "removeItem('${1:key}')"],
+                    ['clear', 'clear()', 'clear()'],
+                    ['key', 'key(index)', 'key(${1:0})'],
+                    ['length', 'length', 'length'],
+                ],
+                'sessionStorage': [
+                    ['getItem', 'getItem(key)', "getItem('${1:key}')"],
+                    ['setItem', 'setItem(key, value)', "setItem('${1:key}', ${2:value})"],
+                    ['removeItem', 'removeItem(key)', "removeItem('${1:key}')"],
+                    ['clear', 'clear()', 'clear()'],
+                ],
+                'JSON': [
+                    ['stringify', 'JSON.stringify(value, replacer?, space?)', 'stringify(${1:value})'],
+                    ['parse', 'JSON.parse(text)', 'parse(${1:text})'],
+                ],
+                'Math': [
+                    ['round', 'Math.round(x)', 'round(${1:x})'],
+                    ['floor', 'Math.floor(x)', 'floor(${1:x})'],
+                    ['ceil', 'Math.ceil(x)', 'ceil(${1:x})'],
+                    ['abs', 'Math.abs(x)', 'abs(${1:x})'],
+                    ['max', 'Math.max(…values)', 'max(${1:a}, ${2:b})'],
+                    ['min', 'Math.min(…values)', 'min(${1:a}, ${2:b})'],
+                    ['random', 'Math.random() → 0..1', 'random()'],
+                    ['sqrt', 'Math.sqrt(x)', 'sqrt(${1:x})'],
+                    ['pow', 'Math.pow(base, exp)', 'pow(${1:base}, ${2:exp})'],
+                    ['log', 'Math.log(x)', 'log(${1:x})'],
+                    ['log2', 'Math.log2(x)', 'log2(${1:x})'],
+                    ['log10', 'Math.log10(x)', 'log10(${1:x})'],
+                    ['sin', 'Math.sin(x)', 'sin(${1:x})'],
+                    ['cos', 'Math.cos(x)', 'cos(${1:x})'],
+                    ['tan', 'Math.tan(x)', 'tan(${1:x})'],
+                    ['trunc', 'Math.trunc(x)', 'trunc(${1:x})'],
+                    ['sign', 'Math.sign(x)', 'sign(${1:x})'],
+                    ['clz32', 'Math.clz32(x)', 'clz32(${1:x})'],
+                    ['hypot', 'Math.hypot(…values)', 'hypot(${1:a}, ${2:b})'],
+                    ['PI', 'Math.PI ≈ 3.14159', 'PI'],
+                    ['E', 'Math.E ≈ 2.71828', 'E'],
+                    ['LN2', 'Math.LN2', 'LN2'],
+                    ['SQRT2', 'Math.SQRT2', 'SQRT2'],
+                    ['fround', 'Math.fround(x)', 'fround(${1:x})'],
+                    ['imul', 'Math.imul(a, b)', 'imul(${1:a}, ${2:b})'],
+                ],
+                'Object': [
+                    ['keys', 'Object.keys(obj)', 'keys(${1:obj})'],
+                    ['values', 'Object.values(obj)', 'values(${1:obj})'],
+                    ['entries', 'Object.entries(obj)', 'entries(${1:obj})'],
+                    ['assign', 'Object.assign(target, …src)', 'assign({}, ${1:obj})'],
+                    ['freeze', 'Object.freeze(obj)', 'freeze(${1:obj})'],
+                    ['seal', 'Object.seal(obj)', 'seal(${1:obj})'],
+                    ['create', 'Object.create(proto)', 'create(${1:proto})'],
+                    ['fromEntries', 'Object.fromEntries(iterable)', 'fromEntries(${1:entries})'],
+                    ['getOwnPropertyNames', 'Object.getOwnPropertyNames(obj)', 'getOwnPropertyNames(${1:obj})'],
+                    ['getPrototypeOf', 'Object.getPrototypeOf(obj)', 'getPrototypeOf(${1:obj})'],
+                    ['hasOwn', 'Object.hasOwn(obj, key)', "hasOwn(${1:obj}, '${2:key}')"],
+                    ['is', 'Object.is(a, b)', 'is(${1:a}, ${2:b})'],
+                    ['isFrozen', 'Object.isFrozen(obj)', 'isFrozen(${1:obj})'],
+                    ['isSealed', 'Object.isSealed(obj)', 'isSealed(${1:obj})'],
+                    ['defineProperty', 'Object.defineProperty(obj, key, desc)', "defineProperty(${1:obj}, '${2:key}', {\n  get() { return ${3}; },\n  set(v) { ${4} }\n})"],
+                    ['getOwnPropertyDescriptor', 'Object.getOwnPropertyDescriptor(obj,key)', "getOwnPropertyDescriptor(${1:obj}, '${2:key}')"],
+                ],
+                'Array': [
+                    ['from', 'Array.from(iterable)', 'from(${1:iterable})'],
+                    ['isArray', 'Array.isArray(value)', 'isArray(${1:value})'],
+                    ['of', 'Array.of(…items)', 'of(${1:item})'],
+                ],
+                'Promise': [
+                    ['resolve', 'Promise.resolve(value)', 'resolve(${1:value})'],
+                    ['reject', 'Promise.reject(reason)', 'reject(${1:reason})'],
+                    ['all', 'Promise.all([…])', 'all([${1:}])'],
+                    ['allSettled', 'Promise.allSettled([…])', 'allSettled([${1:}])'],
+                    ['race', 'Promise.race([…])', 'race([${1:}])'],
+                    ['any', 'Promise.any([…])', 'any([${1:}])'],
+                ],
+                'Number': [
+                    ['isNaN', 'Number.isNaN(v)', 'isNaN(${1:v})'],
+                    ['isFinite', 'Number.isFinite(v)', 'isFinite(${1:v})'],
+                    ['isInteger', 'Number.isInteger(v)', 'isInteger(${1:v})'],
+                    ['parseInt', 'Number.parseInt(str, radix?)', 'parseInt(${1:str})'],
+                    ['parseFloat', 'Number.parseFloat(str)', 'parseFloat(${1:str})'],
+                    ['MAX_VALUE', 'Number.MAX_VALUE', 'MAX_VALUE'],
+                    ['MIN_VALUE', 'Number.MIN_VALUE', 'MIN_VALUE'],
+                    ['MAX_SAFE_INTEGER', 'Number.MAX_SAFE_INTEGER', 'MAX_SAFE_INTEGER'],
+                    ['MIN_SAFE_INTEGER', 'Number.MIN_SAFE_INTEGER', 'MIN_SAFE_INTEGER'],
+                    ['POSITIVE_INFINITY', 'Number.POSITIVE_INFINITY', 'POSITIVE_INFINITY'],
+                    ['NEGATIVE_INFINITY', 'Number.NEGATIVE_INFINITY', 'NEGATIVE_INFINITY'],
+                    ['NaN', 'Number.NaN', 'NaN'],
+                    ['EPSILON', 'Number.EPSILON', 'EPSILON'],
+                ],
+                // Instance methods — appear after any variable (matched by `.` context)
+                '__array_methods__': [
+                    ['map', 'arr.map(fn)', 'map(${1:(item) => $2})'],
+                    ['filter', 'arr.filter(fn)', 'filter(${1:(item) => $2})'],
+                    ['reduce', 'arr.reduce(fn, init)', 'reduce((${1:acc}, ${2:cur}) => ${3:acc}, ${4:[]})'],
+                    ['reduceRight', 'arr.reduceRight(fn, init)', 'reduceRight((${1:acc}, ${2:cur}) => ${3:acc}, ${4:[]})'],
+                    ['forEach', 'arr.forEach(fn)', 'forEach(${1:(item) => {\n  $2\n}})'],
+                    ['find', 'arr.find(fn)', 'find(${1:(item) => $2})'],
+                    ['findIndex', 'arr.findIndex(fn)', 'findIndex(${1:(item) => $2})'],
+                    ['findLast', 'arr.findLast(fn)', 'findLast(${1:(item) => $2})'],
+                    ['findLastIndex', 'arr.findLastIndex(fn)', 'findLastIndex(${1:(item) => $2})'],
+                    ['some', 'arr.some(fn)', 'some(${1:(item) => $2})'],
+                    ['every', 'arr.every(fn)', 'every(${1:(item) => $2})'],
+                    ['includes', 'arr.includes(value)', 'includes(${1:value})'],
+                    ['indexOf', 'arr.indexOf(value)', 'indexOf(${1:value})'],
+                    ['lastIndexOf', 'arr.lastIndexOf(value)', 'lastIndexOf(${1:value})'],
+                    ['push', 'arr.push(…items)', 'push(${1:item})'],
+                    ['pop', 'arr.pop()', 'pop()'],
+                    ['shift', 'arr.shift()', 'shift()'],
+                    ['unshift', 'arr.unshift(…items)', 'unshift(${1:item})'],
+                    ['splice', 'arr.splice(start, del, …items)', 'splice(${1:0}, ${2:1})'],
+                    ['slice', 'arr.slice(start, end?)', 'slice(${1:0})'],
+                    ['concat', 'arr.concat(…arrays)', 'concat(${1:[]})'],
+                    ['flat', 'arr.flat(depth?)', 'flat(${1:1})'],
+                    ['flatMap', 'arr.flatMap(fn)', 'flatMap(${1:(item) => $2})'],
+                    ['sort', 'arr.sort(fn?)', 'sort(${1:(a, b) => a - b})'],
+                    ['reverse', 'arr.reverse()', 'reverse()'],
+                    ['join', 'arr.join(separator)', "join('${1:, }')"],
+                    ['fill', 'arr.fill(value, start?, end?)', 'fill(${1:0})'],
+                    ['copyWithin', 'arr.copyWithin(target, start?)', 'copyWithin(${1:0})'],
+                    ['entries', 'arr.entries()', 'entries()'],
+                    ['keys', 'arr.keys()', 'keys()'],
+                    ['values', 'arr.values()', 'values()'],
+                    ['at', 'arr.at(index)', 'at(${1:-1})'],
+                    ['length', 'arr.length', 'length'],
+                    ['toString', 'arr.toString()', 'toString()'],
+                    ['toReversed', 'arr.toReversed()', 'toReversed()'],
+                    ['toSorted', 'arr.toSorted(fn?)', 'toSorted(${1:(a, b) => a - b})'],
+                    ['toSpliced', 'arr.toSpliced(start, del?)', 'toSpliced(${1:0}, ${2:1})'],
+                    ['with', 'arr.with(index, value)', 'with(${1:0}, ${2:value})'],
+                ],
+                '__string_methods__': [
+                    ['length', 'str.length', 'length'],
+                    ['charAt', 'str.charAt(i)', 'charAt(${1:0})'],
+                    ['charCodeAt', 'str.charCodeAt(i)', 'charCodeAt(${1:0})'],
+                    ['codePointAt', 'str.codePointAt(i)', 'codePointAt(${1:0})'],
+                    ['at', 'str.at(index)', 'at(${1:-1})'],
+                    ['includes', 'str.includes(search)', "includes('${1:text}')"],
+                    ['startsWith', 'str.startsWith(prefix)', "startsWith('${1:prefix}')"],
+                    ['endsWith', 'str.endsWith(suffix)', "endsWith('${1:suffix}')"],
+                    ['indexOf', 'str.indexOf(search)', "indexOf('${1:text}')"],
+                    ['lastIndexOf', 'str.lastIndexOf(search)', "lastIndexOf('${1:text}')"],
+                    ['slice', 'str.slice(start, end?)', 'slice(${1:0})'],
+                    ['substring', 'str.substring(start, end?)', 'substring(${1:0})'],
+                    ['split', 'str.split(separator)', "split('${1:,}')"],
+                    ['replace', 'str.replace(search, replacement)', "replace('${1:search}', '${2:replace}')"],
+                    ['replaceAll', 'str.replaceAll(search, replacement)', "replaceAll('${1:search}', '${2:replace}')"],
+                    ['match', 'str.match(regex)', 'match(/${1:pattern}/g)'],
+                    ['matchAll', 'str.matchAll(regex)', 'matchAll(/${1:pattern}/g)'],
+                    ['search', 'str.search(regex)', 'search(/${1:pattern}/)'],
+                    ['trim', 'str.trim()', 'trim()'],
+                    ['trimStart', 'str.trimStart()', 'trimStart()'],
+                    ['trimEnd', 'str.trimEnd()', 'trimEnd()'],
+                    ['padStart', 'str.padStart(len, fill?)', "padStart(${1:2}, '${2:0}')"],
+                    ['padEnd', 'str.padEnd(len, fill?)', "padEnd(${1:2}, '${2:0}')"],
+                    ['repeat', 'str.repeat(count)', 'repeat(${1:2})'],
+                    ['concat', 'str.concat(…strings)', "concat('${1:}')"],
+                    ['toUpperCase', 'str.toUpperCase()', 'toUpperCase()'],
+                    ['toLowerCase', 'str.toLowerCase()', 'toLowerCase()'],
+                    ['toLocaleUpperCase', 'str.toLocaleUpperCase()', 'toLocaleUpperCase()'],
+                    ['toLocaleLowerCase', 'str.toLocaleLowerCase()', 'toLocaleLowerCase()'],
+                    ['normalize', 'str.normalize(form?)', "normalize('${1:NFC}')"],
+                    ['localeCompare', 'str.localeCompare(other)', "localeCompare('${1:other}')"],
+                ],
+                '__element_methods__': [
+                    ['addEventListener', 'el.addEventListener(event, fn)', "addEventListener('${1:click}', ${2:(e) => {\n  $0\n}})"],
+                    ['removeEventListener', 'el.removeEventListener(event, fn)', "removeEventListener('${1:click}', ${2:handler})"],
+                    ['dispatchEvent', 'el.dispatchEvent(event)', "dispatchEvent(new Event('${1:change}'))"],
+                    ['querySelector', 'el.querySelector(sel)', "querySelector('${1:.class}')"],
+                    ['querySelectorAll', 'el.querySelectorAll(sel)', "querySelectorAll('${1:.class}')"],
+                    ['closest', 'el.closest(sel)', "closest('${1:.class}')"],
+                    ['matches', 'el.matches(sel)', "matches('${1:.class}')"],
+                    ['contains', 'el.contains(node)', 'contains(${1:node})'],
+                    ['appendChild', 'el.appendChild(node)', 'appendChild(${1:node})'],
+                    ['removeChild', 'el.removeChild(node)', 'removeChild(${1:node})'],
+                    ['insertBefore', 'el.insertBefore(node, ref)', 'insertBefore(${1:node}, ${2:ref})'],
+                    ['replaceChild', 'el.replaceChild(newNode, old)', 'replaceChild(${1:newNode}, ${2:oldNode})'],
+                    ['cloneNode', 'el.cloneNode(deep?)', 'cloneNode(${1:true})'],
+                    ['remove', 'el.remove()', 'remove()'],
+                    ['before', 'el.before(…nodes)', 'before(${1:node})'],
+                    ['after', 'el.after(…nodes)', 'after(${1:node})'],
+                    ['prepend', 'el.prepend(…nodes)', 'prepend(${1:node})'],
+                    ['append', 'el.append(…nodes)', 'append(${1:node})'],
+                    ['replaceWith', 'el.replaceWith(…nodes)', 'replaceWith(${1:node})'],
+                    ['setAttribute', 'el.setAttribute(name, val)', "setAttribute('${1:class}', '${2:value}')"],
+                    ['getAttribute', 'el.getAttribute(name)', "getAttribute('${1:class}')"],
+                    ['removeAttribute', 'el.removeAttribute(name)', "removeAttribute('${1:class}')"],
+                    ['hasAttribute', 'el.hasAttribute(name)', "hasAttribute('${1:class}')"],
+                    ['toggleAttribute', 'el.toggleAttribute(name)', "toggleAttribute('${1:hidden}')"],
+                    ['classList', 'el.classList', 'classList'],
+                    ['style', 'el.style', 'style'],
+                    ['dataset', 'el.dataset', 'dataset'],
+                    ['textContent', 'el.textContent', 'textContent'],
+                    ['innerHTML', 'el.innerHTML', 'innerHTML'],
+                    ['outerHTML', 'el.outerHTML', 'outerHTML'],
+                    ['insertAdjacentHTML', 'el.insertAdjacentHTML(pos, html)', "insertAdjacentHTML('${1:beforeend}', '${2:}')"],
+                    ['insertAdjacentElement', 'el.insertAdjacentElement(pos, el)', "insertAdjacentElement('${1:beforeend}', ${2:el})"],
+                    ['getBoundingClientRect', 'el.getBoundingClientRect()', 'getBoundingClientRect()'],
+                    ['getClientRects', 'el.getClientRects()', 'getClientRects()'],
+                    ['scrollIntoView', 'el.scrollIntoView(opts?)', "scrollIntoView({ behavior: 'smooth' })"],
+                    ['scroll', 'el.scroll(opts)', "scroll({ top: ${1:0}, behavior: 'smooth' })"],
+                    ['focus', 'el.focus()', 'focus()'],
+                    ['blur', 'el.blur()', 'blur()'],
+                    ['click', 'el.click()', 'click()'],
+                    ['id', 'el.id', 'id'],
+                    ['className', 'el.className', 'className'],
+                    ['tagName', 'el.tagName', 'tagName'],
+                    ['parentElement', 'el.parentElement', 'parentElement'],
+                    ['parentNode', 'el.parentNode', 'parentNode'],
+                    ['children', 'el.children', 'children'],
+                    ['childNodes', 'el.childNodes', 'childNodes'],
+                    ['firstChild', 'el.firstChild', 'firstChild'],
+                    ['lastChild', 'el.lastChild', 'lastChild'],
+                    ['firstElementChild', 'el.firstElementChild', 'firstElementChild'],
+                    ['lastElementChild', 'el.lastElementChild', 'lastElementChild'],
+                    ['nextSibling', 'el.nextSibling', 'nextSibling'],
+                    ['previousSibling', 'el.previousSibling', 'previousSibling'],
+                    ['nextElementSibling', 'el.nextElementSibling', 'nextElementSibling'],
+                    ['previousElementSibling', 'el.previousElementSibling', 'previousElementSibling'],
+                    ['offsetWidth', 'el.offsetWidth', 'offsetWidth'],
+                    ['offsetHeight', 'el.offsetHeight', 'offsetHeight'],
+                    ['offsetTop', 'el.offsetTop', 'offsetTop'],
+                    ['offsetLeft', 'el.offsetLeft', 'offsetLeft'],
+                    ['scrollWidth', 'el.scrollWidth', 'scrollWidth'],
+                    ['scrollHeight', 'el.scrollHeight', 'scrollHeight'],
+                    ['scrollTop', 'el.scrollTop', 'scrollTop'],
+                    ['scrollLeft', 'el.scrollLeft', 'scrollLeft'],
+                    ['clientWidth', 'el.clientWidth', 'clientWidth'],
+                    ['clientHeight', 'el.clientHeight', 'clientHeight'],
+                    ['hidden', 'el.hidden', 'hidden'],
+                    ['disabled', 'el.disabled', 'disabled'],
+                    ['value', 'el.value', 'value'],
+                    ['checked', 'el.checked', 'checked'],
+                    ['src', 'el.src', 'src'],
+                    ['href', 'el.href', 'href'],
+                    ['alt', 'el.alt', 'alt'],
+                    ['title', 'el.title', 'title'],
+                ],
+                '__classList_methods__': [
+                    ['add', 'classList.add(…classes)', "add('${1:class}')"],
+                    ['remove', 'classList.remove(…classes)', "remove('${1:class}')"],
+                    ['toggle', 'classList.toggle(cls, force?)', "toggle('${1:class}')"],
+                    ['contains', 'classList.contains(cls)', "contains('${1:class}')"],
+                    ['replace', 'classList.replace(old, new)', "replace('${1:old}', '${2:new}')"],
+                    ['item', 'classList.item(index)', 'item(${1:0})'],
+                    ['entries', 'classList.entries()', 'entries()'],
+                    ['forEach', 'classList.forEach(fn)', 'forEach(${1:(cls) => $2})'],
+                    ['values', 'classList.values()', 'values()'],
+                    ['keys', 'classList.keys()', 'keys()'],
+                    ['length', 'classList.length', 'length'],
+                ],
+                '__promise_methods__': [
+                    ['then', 'promise.then(onFulfilled)', 'then(${1:(result) => {\n  $2\n}})'],
+                    ['catch', 'promise.catch(onRejected)', 'catch(${1:(err) => {\n  $2\n}})'],
+                    ['finally', 'promise.finally(fn)', 'finally(() => {\n  $1\n})'],
+                ],
+                '__fetch_methods__': [
+                    ['then', 'res.then(…)', 'then(${1:(res) => res.json()})'],
+                    ['json', 'res.json()', 'json()'],
+                    ['text', 'res.text()', 'text()'],
+                    ['blob', 'res.blob()', 'blob()'],
+                    ['arrayBuffer', 'res.arrayBuffer()', 'arrayBuffer()'],
+                    ['formData', 'res.formData()', 'formData()'],
+                    ['ok', 'res.ok', 'ok'],
+                    ['status', 'res.status', 'status'],
+                    ['statusText', 'res.statusText', 'statusText'],
+                    ['headers', 'res.headers', 'headers'],
+                    ['url', 'res.url', 'url'],
+                    ['redirected', 'res.redirected', 'redirected'],
+                    ['type', 'res.type', 'type'],
+                    ['clone', 'res.clone()', 'clone()'],
+                ],
+                '__number_methods__': [
+                    ['toFixed', 'num.toFixed(digits)', 'toFixed(${1:2})'],
+                    ['toPrecision', 'num.toPrecision(digits)', 'toPrecision(${1:4})'],
+                    ['toExponential', 'num.toExponential(digits?)', 'toExponential(${1:2})'],
+                    ['toString', 'num.toString(radix?)', 'toString(${1:16})'],
+                    ['toLocaleString', 'num.toLocaleString(locale, opts?)', "toLocaleString('${1:de-DE}')"],
+                ],
+            };
+
+            // Map object names → their methods (for named objects)
+            const NAMED_OBJECTS = ['console','document','window','localStorage','sessionStorage','JSON','Math','Object','Array','Promise','Number'];
+
+            // instance method groups — when we don't know the type, offer all instance methods
+            const ALL_INSTANCE_GROUPS = [
+                '__element_methods__',
+                '__array_methods__',
+                '__string_methods__',
+                '__classList_methods__',
+                '__promise_methods__',
+                '__fetch_methods__',
+                '__number_methods__',
+            ];
+
+            monaco.languages.registerCompletionItemProvider('javascript', {
+                triggerCharacters: ['.'],
+                provideCompletionItems: (model, position) => {
+                    const line = model.getLineContent(position.lineNumber);
+                    const before = line.slice(0, position.column - 1);
+
+                    // Match "something." at end of line
+                    const dotMatch = before.match(/(\w[\w.]*)\.$/) || before.match(/\)\.$/) || before.match(/]\.$/) ;
+                    if (!dotMatch) return { suggestions: [] };
+
+                    const identifier = (before.match(/(\w[\w.]*)\.$/) || ['',''])[1];
+                    const topLevel = identifier.split('.').pop() || '';
+
+                    const range = new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column);
+
+                    let methodGroup = null;
+
+                    // Check named objects first
+                    if (NAMED_OBJECTS.includes(identifier) || NAMED_OBJECTS.includes(topLevel)) {
+                        const key = NAMED_OBJECTS.includes(identifier) ? identifier : topLevel;
+                        methodGroup = JS_DOT_COMPLETIONS[key] || null;
+                    }
+
+                    // classList special case
+                    if (!methodGroup && /classList$/.test(identifier)) {
+                        methodGroup = JS_DOT_COMPLETIONS['__classList_methods__'];
+                    }
+
+                    // If we matched a named object, return those specifically
+                    if (methodGroup) {
+                        return {
+                            suggestions: methodGroup.map(([label, detail, insertText], i) => ({
+                                label,
+                                kind: typeof insertText === 'string' && !insertText.includes('(')
+                                    ? monaco.languages.CompletionItemKind.Field
+                                    : monaco.languages.CompletionItemKind.Method,
+                                insertText,
+                                insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                                detail,
+                                sortText: String(i).padStart(4, '0'),
+                                range,
+                            }))
+                        };
+                    }
+
+                    // Unknown variable → offer all instance method groups combined
+                    const combined = [];
+                    ALL_INSTANCE_GROUPS.forEach(grpKey => {
+                        (JS_DOT_COMPLETIONS[grpKey] || []).forEach(([label, detail, insertText], i) => {
+                            combined.push({
+                                label,
+                                kind: typeof insertText === 'string' && !insertText.includes('(')
+                                    ? monaco.languages.CompletionItemKind.Field
+                                    : monaco.languages.CompletionItemKind.Method,
+                                insertText,
+                                insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                                detail,
+                                sortText: grpKey + '_' + String(i).padStart(4, '0'),
+                                range,
+                            });
+                        });
+                    });
+
+                    // Deduplicate by label (prefer first seen)
+                    const seen = new Set();
+                    const deduped = combined.filter(s => {
+                        if (seen.has(s.label)) return false;
+                        seen.add(s.label);
+                        return true;
+                    });
+
+                    return { suggestions: deduped };
+                }
+            });
 
             /* ---------- CSS Property + Value completion ---------- */
             // Fires on any letter, colon, or space inside a CSS rule block
@@ -7734,8 +8301,29 @@ console.log('App geladen ✨');
                 }
             });
             monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
-                noSemanticValidation: true,
+                noSemanticValidation: false,
                 noSyntaxValidation: false,
+                diagnosticCodesToIgnore: [
+                    2304, // Cannot find name '...' (suppress for browser globals not in lib)
+                    2339, // Property '...' does not exist — too noisy without full type info
+                    2345, // Argument not assignable — too noisy without types
+                    2322, // Type not assignable
+                    7006, // implicit any param
+                    7005, // Variable '...' implicitly has an 'any' type
+                    7034, // Variable implicitly has type 'any' in some locations
+                ],
+            });
+            // Enable full DOM + ES2022 IntelliSense (same as VS Code default for JS)
+            monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+                target: monaco.languages.typescript.ScriptTarget.ES2022,
+                allowNonTsExtensions: true,
+                moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+                module: monaco.languages.typescript.ModuleKind.CommonJS,
+                noEmit: true,
+                lib: ['es2022', 'dom', 'dom.iterable'],
+                allowJs: true,
+                checkJs: false,
+                strict: false,
             });
             const jsFmtOpts = {
                 tabSize: 2,
@@ -8212,12 +8800,40 @@ console.log('App geladen ✨');
                     acceptSuggestionOnEnter: 'on',
                     tabCompletion: 'on',
                     suggestSelection: 'first',
-                    wordBasedSuggestions: 'off',
+                    wordBasedSuggestions: 'allDocuments',
                     inlineSuggest: { enabled: true, mode: 'prefix', showToolbar: 'onHover' },
                     suggest: {
                         preview: true,
                         showSnippets: true,
                         showWords: true,
+                        showMethods: true,
+                        showFunctions: true,
+                        showConstructors: true,
+                        showFields: true,
+                        showVariables: true,
+                        showClasses: true,
+                        showModules: true,
+                        showProperties: true,
+                        showEvents: true,
+                        showOperators: true,
+                        showUnits: true,
+                        showValues: true,
+                        showConstants: true,
+                        showEnums: true,
+                        showEnumMembers: true,
+                        showKeywords: true,
+                        showTypeParameters: true,
+                        showIssues: true,
+                        showUsers: true,
+                        showFolders: true,
+                        showFiles: true,
+                        showReferences: true,
+                        showColors: true,
+                        showInterfaces: true,
+                        showStructs: true,
+                        filterGraceful: true,
+                        localityBonus: true,
+                        shareSuggestSelections: false,
                         snippetsPreventQuickSuggestions: false,
                         insertMode: 'insert',
                     },
