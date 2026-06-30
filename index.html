@@ -3825,6 +3825,13 @@
                         <polyline points="15 8 18 11 15 14" />
                     </svg>
                 </button>
+                <!-- Python Terminal -->
+                <button class="act-btn" id="act-terminal" data-tip="Python Terminal" data-tip-pos="right" aria-label="Python Terminal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="4 17 10 11 4 5"/>
+                        <line x1="12" y1="19" x2="20" y2="19"/>
+                    </svg>
+                </button>
                 <!-- Capture Snapshot -->
                 <button class="act-btn" id="act-capture" data-tip="Screenshot erstellen" data-tip-pos="right" aria-label="Screenshot erstellen">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
@@ -5328,6 +5335,91 @@
 
         .wb-pulse {
             animation: wb-pulse 2s ease-in-out infinite;
+        }
+
+        /* ---- Python Terminal Panel ---- */
+        .py-terminal {
+            position: fixed; bottom: 40px; right: 20px;
+            width: 620px; height: 340px;
+            background: #1e1e2e; border: 1px solid #3b3b52; border-radius: 8px;
+            display: flex; flex-direction: column; z-index: 9000;
+            box-shadow: 0 8px 32px rgba(0,0,0,.55);
+            font-family: 'Cascadia Code','Fira Code','Consolas',monospace;
+            font-size: 13px; color: #cdd6f4;
+            min-width: 300px; min-height: 150px;
+        }
+        .py-terminal.hidden { display: none !important; }
+        .py-terminal-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 8px; height: 36px; background: #181825;
+            border-radius: 8px 8px 0 0; cursor: grab; user-select: none;
+            flex-shrink: 0; border-bottom: 1px solid #3b3b52;
+        }
+        .py-terminal-header:active { cursor: grabbing; }
+        .py-term-tabs { display: flex; gap: 2px; }
+        .py-tab {
+            background: none; border: none; color: #6c7086; font-size: 12px;
+            padding: 4px 10px; cursor: pointer; border-radius: 4px;
+            font-family: inherit; transition: color .15s, background .15s;
+        }
+        .py-tab.active { color: #cdd6f4; background: #313244; }
+        .py-tab:hover { color: #cdd6f4; }
+        .py-term-actions { display: flex; align-items: center; gap: 4px; }
+        .py-status { font-size: 11px; color: #6c7086; margin-right: 4px; }
+        .py-status.ready  { color: #a6e3a1; }
+        .py-status.loading{ color: #f9e2af; }
+        .py-status.error  { color: #f38ba8; }
+        .py-term-btn {
+            background: none; border: none; color: #6c7086; font-size: 14px;
+            cursor: pointer; padding: 2px 6px; border-radius: 3px; line-height: 1;
+        }
+        .py-term-btn:hover { background: #313244; color: #cdd6f4; }
+        .py-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .py-panel.hidden { display: none !important; }
+        .py-output {
+            flex: 1; overflow-y: auto; padding: 8px 12px;
+            white-space: pre-wrap; word-break: break-word;
+            font-size: 12.5px; line-height: 1.55;
+        }
+        .py-out-line  { color: #cdd6f4; }
+        .py-err-line  { color: #f38ba8; }
+        .py-info-line { color: #89b4fa; }
+        .py-warn-line { color: #f9e2af; }
+        .py-input-row {
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 8px; border-top: 1px solid #313244; flex-shrink: 0;
+        }
+        .py-prompt { color: #a6e3a1; font-size: 12px; flex-shrink: 0; }
+        .py-repl-input {
+            flex: 1; background: transparent; border: none; outline: none;
+            color: #cdd6f4; font-family: inherit; font-size: 12.5px; padding: 2px 0;
+        }
+        .py-run-btn {
+            background: #1a5c38; border: none; color: #a6e3a1; font-size: 11px;
+            padding: 3px 8px; border-radius: 4px; cursor: pointer; flex-shrink: 0;
+            transition: background .15s;
+        }
+        .py-run-btn:hover:not(:disabled) { background: #27a85a; color: #fff; }
+        .py-run-btn:disabled { opacity: .45; cursor: default; }
+        .py-pkg-row {
+            display: flex; gap: 6px; padding: 8px; border-bottom: 1px solid #313244; flex-shrink: 0;
+        }
+        .py-pkg-input {
+            flex: 1; background: #313244; border: 1px solid #45475a; border-radius: 4px;
+            color: #cdd6f4; font-size: 12px; padding: 4px 8px; font-family: inherit; outline: none;
+        }
+        .py-pkg-input:focus { border-color: #89b4fa; }
+        .py-pkg-btn {
+            background: #1e3a5f; border: none; color: #89b4fa; font-size: 12px;
+            padding: 4px 10px; border-radius: 4px; cursor: pointer; white-space: nowrap;
+        }
+        .py-pkg-btn:hover:not(:disabled) { background: #1d4ed8; color: #fff; }
+        .py-pkg-btn:disabled { opacity: .45; cursor: default; }
+        .py-resize-handle {
+            position: absolute; bottom: 0; right: 0; width: 16px; height: 16px;
+            cursor: se-resize; border-radius: 0 0 8px 0;
+            background: linear-gradient(135deg,transparent 50%,#45475a 50%,#45475a 60%,
+                transparent 60%,transparent 70%,#45475a 70%,#45475a 80%,transparent 80%);
         }
     </style>
 
@@ -7285,6 +7377,40 @@ console.log('App geladen ✨');
             monaco.languages.registerCompletionItemProvider('html', makeSnippetProvider('html', HTML_SNIPPETS));
             monaco.languages.registerCompletionItemProvider('css', makeSnippetProvider('css', CSS_SNIPPETS));
             monaco.languages.registerCompletionItemProvider('javascript', makeSnippetProvider('javascript', JS_SNIPPETS));
+
+            const PY_SNIPPETS = [
+                ['print',    'print()',           'print(${1:value})'],
+                ['def',      'Funktion',           'def ${1:name}(${2:params}):\n    ${0:pass}'],
+                ['class',    'Klasse',             'class ${1:Name}:\n    def __init__(self${2:, params}):\n        ${0:pass}'],
+                ['if',       'if-Block',           'if ${1:condition}:\n    ${0:pass}'],
+                ['ife',      'if/else',            'if ${1:condition}:\n    ${2:pass}\nelse:\n    ${0:pass}'],
+                ['elif',     'elif',               'elif ${1:condition}:\n    ${0:pass}'],
+                ['for',      'for-Schleife',       'for ${1:item} in ${2:iterable}:\n    ${0:pass}'],
+                ['while',    'while-Schleife',     'while ${1:condition}:\n    ${0:pass}'],
+                ['try',      'try/except',         'try:\n    ${1:pass}\nexcept ${2:Exception} as ${3:e}:\n    ${0:print(e)}'],
+                ['with',     'with-Block',         'with ${1:open("${2:datei.txt}")} as ${3:f}:\n    ${0:pass}'],
+                ['import',   'import',             'import ${1:module}'],
+                ['from',     'from import',        'from ${1:module} import ${2:name}'],
+                ['lc',       'List Comprehension', '[${1:ausdruck} for ${2:item} in ${3:liste}]'],
+                ['dc',       'Dict Comprehension', '{${1:k}: ${2:v} for ${1:k}, ${2:v} in ${3:dict}.items()}'],
+                ['lambda',   'Lambda',             'lambda ${1:params}: ${0:ausdruck}'],
+                ['main',     '__main__',           'if __name__ == "__main__":\n    ${0:main()}'],
+                ['asyncdef', 'async def',          'async def ${1:name}(${2:params}):\n    ${0:pass}'],
+                ['fstr',     'f-String',           'f"${1:text} {${2:var}}"'],
+                ['open',     'Datei öffnen',       'with open("${1:datei.txt}", "${2:r}") as ${3:f}:\n    ${0:inhalt = f.read()}'],
+                ['json',     'json',               'import json\n\ndata = json.loads(${1:text})\n${0:text = json.dumps(data, indent=2)}'],
+                ['range',    'range()',             'range(${1:start}, ${2:stop}${3:, ${4:schritt}})'],
+                ['isinstance','isinstance()',      'isinstance(${1:obj}, ${0:typ})'],
+                ['np',       'numpy',              'import numpy as np\n${0}'],
+                ['pd',       'pandas',             'import pandas as pd\n${0}'],
+                ['plt',      'matplotlib',         'import matplotlib.pyplot as plt\n${0}'],
+                ['req',      'requests',           'import requests\n\nres = requests.get("${1:url}")\ndata = res.json()\n${0}'],
+                ['deco',     'Decorator',          'def ${1:dekorator}(func):\n    def wrapper(*args, **kwargs):\n        ${2:pass}\n        return func(*args, **kwargs)\n    return wrapper'],
+                ['enum',     'Enum',               'from enum import Enum\n\nclass ${1:Name}(Enum):\n    ${0:WERT} = 1'],
+                ['dt',       'datetime',           'from datetime import datetime\n\njetzt = datetime.now()\n${0}'],
+                ['path',     'pathlib',            'from pathlib import Path\n\np = Path("${1:.}")\n${0}'],
+            ];
+            monaco.languages.registerCompletionItemProvider('python', makeSnippetProvider('python', PY_SNIPPETS));
 
             /* ---------- HTML Attribute completions (inside <tag …>) ---------- */
             const UNIVERSAL_ATTRS = [
@@ -14548,6 +14674,249 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
             </div>
         </div>
     </div>
+
+    <!-- ==================== PYTHON TERMINAL PANEL ==================== -->
+    <div id="py-terminal" class="py-terminal hidden">
+        <div class="py-terminal-header" id="py-term-drag">
+            <div class="py-term-tabs">
+                <button class="py-tab active" id="py-tab-term">Terminal</button>
+                <button class="py-tab" id="py-tab-pkg">Pakete</button>
+            </div>
+            <div class="py-term-actions">
+                <span id="py-status" class="py-status" title="Python Status">● Nicht geladen</span>
+                <button class="py-term-btn" id="py-term-clear" title="Ausgabe leeren">⌫</button>
+                <button class="py-term-btn" id="py-term-close" title="Schließen">✕</button>
+            </div>
+        </div>
+        <div id="py-panel-term" class="py-panel">
+            <div id="py-output" class="py-output"></div>
+            <div class="py-input-row">
+                <span class="py-prompt">&gt;&gt;&gt;</span>
+                <input id="py-repl" class="py-repl-input" type="text" placeholder="Python eingeben…" spellcheck="false" autocomplete="off" />
+                <button id="py-run-file" class="py-run-btn" disabled>▶ Datei ausführen</button>
+            </div>
+        </div>
+        <div id="py-panel-pkg" class="py-panel hidden">
+            <div class="py-pkg-row">
+                <input id="py-pkg-input" class="py-pkg-input" type="text" placeholder="Paketname, z.B. numpy" spellcheck="false" autocomplete="off" />
+                <button id="py-pkg-install" class="py-pkg-btn">📦 Installieren</button>
+            </div>
+            <div id="py-pkg-output" class="py-output"></div>
+        </div>
+        <div class="py-resize-handle" id="py-resize"></div>
+    </div>
+
+    <script>
+    /* ==================== PYTHON TERMINAL LOGIC ==================== */
+    (function () {
+        const termPanel   = document.getElementById('py-terminal');
+        const actBtn      = document.getElementById('act-terminal');
+        const btnClose    = document.getElementById('py-term-close');
+        const btnClear    = document.getElementById('py-term-clear');
+        const tabTerm     = document.getElementById('py-tab-term');
+        const tabPkg      = document.getElementById('py-tab-pkg');
+        const panelTerm   = document.getElementById('py-panel-term');
+        const panelPkg    = document.getElementById('py-panel-pkg');
+        const outEl       = document.getElementById('py-output');
+        const replInput   = document.getElementById('py-repl');
+        const runFileBtn  = document.getElementById('py-run-file');
+        const statusEl    = document.getElementById('py-status');
+        const pkgInput    = document.getElementById('py-pkg-input');
+        const pkgBtn      = document.getElementById('py-pkg-install');
+        const pkgOut      = document.getElementById('py-pkg-output');
+
+        let pyodide = null, pyLoading = false;
+        const history = []; let histIdx = -1;
+
+        // Restore saved position / size
+        try {
+            const p = JSON.parse(localStorage.getItem('codeplay.terminal.pos') || 'null');
+            if (p) {
+                termPanel.style.right = 'auto'; termPanel.style.bottom = 'auto';
+                if (p.left)   termPanel.style.left   = p.left;
+                if (p.top)    termPanel.style.top    = p.top;
+                if (p.width)  termPanel.style.width  = p.width;
+                if (p.height) termPanel.style.height = p.height;
+            }
+        } catch (_) {}
+
+        function savePos() {
+            try {
+                localStorage.setItem('codeplay.terminal.pos', JSON.stringify({
+                    left: termPanel.style.left, top: termPanel.style.top,
+                    width: termPanel.style.width, height: termPanel.style.height
+                }));
+            } catch (_) {}
+        }
+
+        function setStatus(txt, cls) {
+            statusEl.textContent = '● ' + txt;
+            statusEl.className = 'py-status ' + (cls || '');
+        }
+
+        function appendLine(text, cls, target) {
+            const el = target || outEl;
+            const div = document.createElement('div');
+            div.className = cls || 'py-out-line';
+            div.textContent = text;
+            el.appendChild(div);
+            el.scrollTop = el.scrollHeight;
+        }
+
+        async function ensurePyodide() {
+            if (pyodide) return true;
+            if (pyLoading) return false;
+            pyLoading = true;
+            setStatus('Lädt…', 'loading');
+            runFileBtn.disabled = true; pkgBtn.disabled = true;
+            appendLine('⏳ Python (Pyodide) wird geladen, bitte warten…', 'py-info-line');
+            try {
+                await new Promise((res, rej) => {
+                    if (window.loadPyodide) { res(); return; }
+                    const s = document.createElement('script');
+                    s.src = 'https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.js';
+                    s.onload = res;
+                    s.onerror = () => rej(new Error('Pyodide konnte nicht geladen werden (kein Internet?)'));
+                    document.head.appendChild(s);
+                });
+                pyodide = await window.loadPyodide({
+                    stdout: t => appendLine(t, 'py-out-line'),
+                    stderr: t => appendLine(t, 'py-err-line'),
+                });
+                await pyodide.loadPackage('micropip');
+                setStatus('Bereit', 'ready');
+                appendLine('✓ Python bereit. Pakete über den "Pakete"-Tab installieren.', 'py-info-line');
+                runFileBtn.disabled = false; pkgBtn.disabled = false;
+                return true;
+            } catch (e) {
+                setStatus('Fehler', 'error');
+                appendLine('✗ ' + e.message, 'py-err-line');
+                pyLoading = false;
+                return false;
+            }
+        }
+
+        async function runCode(code, target) {
+            if (!(await ensurePyodide())) return;
+            try {
+                const result = await pyodide.runPythonAsync(code);
+                if (result !== undefined && result !== null)
+                    appendLine(String(result), 'py-out-line', target);
+            } catch (e) {
+                appendLine(e.message, 'py-err-line', target);
+            }
+        }
+
+        // Toggle terminal
+        actBtn.addEventListener('click', () => {
+            const hidden = termPanel.classList.contains('hidden');
+            termPanel.classList.toggle('hidden', !hidden);
+            actBtn.classList.toggle('active', hidden);
+            if (hidden && !pyodide && !pyLoading) ensurePyodide();
+        });
+
+        btnClose.addEventListener('click', () => {
+            termPanel.classList.add('hidden');
+            actBtn.classList.remove('active');
+        });
+
+        btnClear.addEventListener('click', () => { outEl.innerHTML = ''; });
+
+        // Tabs
+        tabTerm.addEventListener('click', () => {
+            tabTerm.classList.add('active'); tabPkg.classList.remove('active');
+            panelTerm.classList.remove('hidden'); panelPkg.classList.add('hidden');
+        });
+        tabPkg.addEventListener('click', () => {
+            tabPkg.classList.add('active'); tabTerm.classList.remove('active');
+            panelPkg.classList.remove('hidden'); panelTerm.classList.add('hidden');
+            if (!pyodide && !pyLoading) ensurePyodide();
+        });
+
+        // REPL
+        replInput.addEventListener('keydown', async e => {
+            if (e.key === 'Enter') {
+                const code = replInput.value.trim(); if (!code) return;
+                history.unshift(code); histIdx = -1;
+                appendLine('>>> ' + code, 'py-info-line');
+                replInput.value = '';
+                await runCode(code);
+            } else if (e.key === 'ArrowUp') {
+                if (histIdx < history.length - 1) histIdx++;
+                replInput.value = history[histIdx] || ''; e.preventDefault();
+            } else if (e.key === 'ArrowDown') {
+                histIdx = histIdx > 0 ? histIdx - 1 : -1;
+                replInput.value = histIdx >= 0 ? history[histIdx] : ''; e.preventDefault();
+            }
+        });
+
+        // Run current .py file
+        runFileBtn.addEventListener('click', async () => {
+            const tab = typeof activeTab !== 'undefined' ? activeTab : null;
+            if (!tab || typeof files === 'undefined' || !(tab in files)) {
+                appendLine('⚠ Keine Datei geöffnet.', 'py-warn-line'); return;
+            }
+            if (tab.split('.').pop().toLowerCase() !== 'py') {
+                appendLine('⚠ Aktuelle Datei ist kein Python-Skript (.py).', 'py-warn-line'); return;
+            }
+            appendLine('▶ ' + tab, 'py-info-line');
+            runFileBtn.disabled = true;
+            await runCode(files[tab]);
+            runFileBtn.disabled = false;
+        });
+
+        // Package install
+        pkgBtn.addEventListener('click', async () => {
+            const pkg = pkgInput.value.trim(); if (!pkg) return;
+            if (!(await ensurePyodide())) return;
+            pkgBtn.disabled = true;
+            appendLine('⏳ Installiere ' + pkg + '…', 'py-info-line', pkgOut);
+            try {
+                const micropip = pyodide.pyimport('micropip');
+                await micropip.install(pkg);
+                appendLine('✓ ' + pkg + ' erfolgreich installiert.', 'py-out-line', pkgOut);
+                pkgInput.value = '';
+            } catch (e) {
+                appendLine('✗ Fehler: ' + e.message, 'py-err-line', pkgOut);
+            }
+            pkgBtn.disabled = false;
+        });
+        pkgInput.addEventListener('keydown', e => { if (e.key === 'Enter') pkgBtn.click(); });
+
+        // ---- Draggable ----
+        let drag = false, dx0, dy0, left0, top0;
+        document.getElementById('py-term-drag').addEventListener('mousedown', e => {
+            if (e.target.closest('button,input')) return;
+            drag = true;
+            const r = termPanel.getBoundingClientRect();
+            dx0 = e.clientX; dy0 = e.clientY; left0 = r.left; top0 = r.top;
+            termPanel.style.right = 'auto'; termPanel.style.bottom = 'auto';
+            termPanel.style.left = left0 + 'px'; termPanel.style.top = top0 + 'px';
+            e.preventDefault();
+        });
+        document.addEventListener('mousemove', e => {
+            if (!drag) return;
+            termPanel.style.left = Math.max(0, left0 + e.clientX - dx0) + 'px';
+            termPanel.style.top  = Math.max(0, top0  + e.clientY - dy0) + 'px';
+        });
+        document.addEventListener('mouseup', () => { if (drag) { drag = false; savePos(); } });
+
+        // ---- Resizable ----
+        let res = false, rx0, ry0, rw0, rh0;
+        document.getElementById('py-resize').addEventListener('mousedown', e => {
+            res = true; rx0 = e.clientX; ry0 = e.clientY;
+            rw0 = termPanel.offsetWidth; rh0 = termPanel.offsetHeight;
+            e.preventDefault(); e.stopPropagation();
+        });
+        document.addEventListener('mousemove', e => {
+            if (!res) return;
+            termPanel.style.width  = Math.max(300, rw0 + e.clientX - rx0) + 'px';
+            termPanel.style.height = Math.max(150, rh0 + e.clientY - ry0) + 'px';
+        });
+        document.addEventListener('mouseup', () => { if (res) { res = false; savePos(); } });
+    })();
+    </script>
+
 </body>
 
 </html>
