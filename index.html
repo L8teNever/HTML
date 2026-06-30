@@ -308,13 +308,16 @@
             --col-sidebar: 220px;
             --col-editor: 1fr;
             --col-preview: 1fr;
+            --row-term: 0px;
             grid-column: 2;
             grid-row: 1;
             display: grid;
             grid-template-columns: var(--col-sidebar) 6px var(--col-editor) 6px var(--col-preview);
+            grid-template-rows: 1fr var(--row-term);
             min-height: 0;
             overflow: hidden;
-            transition: grid-template-columns 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: grid-template-columns 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+                        grid-template-rows 0.18s ease;
         }
 
         body.resizing .main {
@@ -4601,6 +4604,37 @@
                     <div class="preview-error" id="preview-error"></div>
                 </div>
             </section>
+
+            <!-- ========== PYTHON TERMINAL (docked bottom) ========== -->
+            <div id="py-terminal" class="py-terminal">
+                <div class="py-term-resizer" id="py-term-resizer"></div>
+                <div class="py-terminal-header" id="py-term-drag">
+                    <div class="py-term-tabs">
+                        <button class="py-tab active" id="py-tab-term">Terminal</button>
+                        <button class="py-tab" id="py-tab-pkg">Pakete</button>
+                    </div>
+                    <div class="py-term-actions">
+                        <span id="py-status" class="py-status" title="Python Status">● Nicht geladen</span>
+                        <button class="py-term-btn" id="py-term-clear" title="Ausgabe leeren">⌫</button>
+                        <button class="py-term-btn" id="py-term-close" title="Schließen">✕</button>
+                    </div>
+                </div>
+                <div id="py-panel-term" class="py-panel">
+                    <div id="py-output" class="py-output"></div>
+                    <div class="py-input-row">
+                        <span class="py-prompt">&gt;&gt;&gt;</span>
+                        <input id="py-repl" class="py-repl-input" type="text" placeholder="Python eingeben…" spellcheck="false" autocomplete="off" />
+                        <button id="py-run-file" class="py-run-btn" disabled>▶ Datei ausführen</button>
+                    </div>
+                </div>
+                <div id="py-panel-pkg" class="py-panel hidden">
+                    <div class="py-pkg-row">
+                        <input id="py-pkg-input" class="py-pkg-input" type="text" placeholder="Paketname, z.B. numpy" spellcheck="false" autocomplete="off" />
+                        <button id="py-pkg-install" class="py-pkg-btn">📦 Installieren</button>
+                    </div>
+                    <div id="py-pkg-output" class="py-output"></div>
+                </div>
+            </div>
         </main>
 
         <!-- ============= STATUSBAR ============= -->
@@ -5337,18 +5371,23 @@
             animation: wb-pulse 2s ease-in-out infinite;
         }
 
-        /* ---- Python Terminal Panel ---- */
+        /* ---- Python Terminal Panel (docked bottom) ---- */
         .py-terminal {
-            position: fixed; bottom: 40px; right: 20px;
-            width: 620px; height: 340px;
-            background: #1e1e2e; border: 1px solid #3b3b52; border-radius: 8px;
-            display: flex; flex-direction: column; z-index: 9000;
-            box-shadow: 0 8px 32px rgba(0,0,0,.55);
+            grid-column: 1 / -1;
+            grid-row: 2;
+            display: flex; flex-direction: column;
+            background: #1e1e2e;
+            border-top: 2px solid #45475a;
+            overflow: hidden; min-height: 0;
             font-family: 'Cascadia Code','Fira Code','Consolas',monospace;
             font-size: 13px; color: #cdd6f4;
-            min-width: 300px; min-height: 150px;
         }
-        .py-terminal.hidden { display: none !important; }
+        /* top resize strip */
+        .py-term-resizer {
+            height: 4px; cursor: ns-resize; flex-shrink: 0;
+            background: transparent; user-select: none;
+        }
+        .py-term-resizer:hover { background: var(--accent, #007acc); }
         .py-terminal-header {
             display: flex; align-items: center; justify-content: space-between;
             padding: 0 8px; height: 36px; background: #181825;
@@ -14675,79 +14714,55 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
         </div>
     </div>
 
-    <!-- ==================== PYTHON TERMINAL PANEL ==================== -->
-    <div id="py-terminal" class="py-terminal hidden">
-        <div class="py-terminal-header" id="py-term-drag">
-            <div class="py-term-tabs">
-                <button class="py-tab active" id="py-tab-term">Terminal</button>
-                <button class="py-tab" id="py-tab-pkg">Pakete</button>
-            </div>
-            <div class="py-term-actions">
-                <span id="py-status" class="py-status" title="Python Status">● Nicht geladen</span>
-                <button class="py-term-btn" id="py-term-clear" title="Ausgabe leeren">⌫</button>
-                <button class="py-term-btn" id="py-term-close" title="Schließen">✕</button>
-            </div>
-        </div>
-        <div id="py-panel-term" class="py-panel">
-            <div id="py-output" class="py-output"></div>
-            <div class="py-input-row">
-                <span class="py-prompt">&gt;&gt;&gt;</span>
-                <input id="py-repl" class="py-repl-input" type="text" placeholder="Python eingeben…" spellcheck="false" autocomplete="off" />
-                <button id="py-run-file" class="py-run-btn" disabled>▶ Datei ausführen</button>
-            </div>
-        </div>
-        <div id="py-panel-pkg" class="py-panel hidden">
-            <div class="py-pkg-row">
-                <input id="py-pkg-input" class="py-pkg-input" type="text" placeholder="Paketname, z.B. numpy" spellcheck="false" autocomplete="off" />
-                <button id="py-pkg-install" class="py-pkg-btn">📦 Installieren</button>
-            </div>
-            <div id="py-pkg-output" class="py-output"></div>
-        </div>
-        <div class="py-resize-handle" id="py-resize"></div>
-    </div>
-
     <script>
     /* ==================== PYTHON TERMINAL LOGIC ==================== */
     (function () {
-        const termPanel   = document.getElementById('py-terminal');
-        const actBtn      = document.getElementById('act-terminal');
-        const btnClose    = document.getElementById('py-term-close');
-        const btnClear    = document.getElementById('py-term-clear');
-        const tabTerm     = document.getElementById('py-tab-term');
-        const tabPkg      = document.getElementById('py-tab-pkg');
-        const panelTerm   = document.getElementById('py-panel-term');
-        const panelPkg    = document.getElementById('py-panel-pkg');
-        const outEl       = document.getElementById('py-output');
-        const replInput   = document.getElementById('py-repl');
-        const runFileBtn  = document.getElementById('py-run-file');
-        const statusEl    = document.getElementById('py-status');
-        const pkgInput    = document.getElementById('py-pkg-input');
-        const pkgBtn      = document.getElementById('py-pkg-install');
-        const pkgOut      = document.getElementById('py-pkg-output');
+        const main      = document.getElementById('main');
+        const termPanel = document.getElementById('py-terminal');
+        const actBtn    = document.getElementById('act-terminal');
+        const btnClose  = document.getElementById('py-term-close');
+        const btnClear  = document.getElementById('py-term-clear');
+        const tabTerm   = document.getElementById('py-tab-term');
+        const tabPkg    = document.getElementById('py-tab-pkg');
+        const panelTerm = document.getElementById('py-panel-term');
+        const panelPkg  = document.getElementById('py-panel-pkg');
+        const outEl     = document.getElementById('py-output');
+        const replInput = document.getElementById('py-repl');
+        const runBtn    = document.getElementById('py-run-file');
+        const statusEl  = document.getElementById('py-status');
+        const pkgInput  = document.getElementById('py-pkg-input');
+        const pkgBtn    = document.getElementById('py-pkg-install');
+        const pkgOut    = document.getElementById('py-pkg-output');
 
-        let pyodide = null, pyLoading = false;
-        const history = []; let histIdx = -1;
+        let pyodide = null, pyLoading = false, termOpen = false;
+        const hist = []; let histIdx = -1;
+        const DEF_H = 220;
 
-        // Restore saved position / size
-        try {
-            const p = JSON.parse(localStorage.getItem('codeplay.terminal.pos') || 'null');
-            if (p) {
-                termPanel.style.right = 'auto'; termPanel.style.bottom = 'auto';
-                if (p.left)   termPanel.style.left   = p.left;
-                if (p.top)    termPanel.style.top    = p.top;
-                if (p.width)  termPanel.style.width  = p.width;
-                if (p.height) termPanel.style.height = p.height;
-            }
-        } catch (_) {}
-
-        function savePos() {
-            try {
-                localStorage.setItem('codeplay.terminal.pos', JSON.stringify({
-                    left: termPanel.style.left, top: termPanel.style.top,
-                    width: termPanel.style.width, height: termPanel.style.height
-                }));
-            } catch (_) {}
+        function getSavedH() {
+            return parseInt(localStorage.getItem('codeplay.terminal.h') || DEF_H, 10) || DEF_H;
         }
+        function saveH(h) {
+            try { localStorage.setItem('codeplay.terminal.h', h); } catch (_) {}
+        }
+
+        function openTerm() {
+            termOpen = true;
+            const h = getSavedH();
+            main.style.setProperty('--row-term', h + 'px');
+            actBtn.classList.add('active');
+            if (!pyodide && !pyLoading) ensurePyodide();
+        }
+        function closeTerm() {
+            termOpen = false;
+            main.style.setProperty('--row-term', '0px');
+            actBtn.classList.remove('active');
+        }
+
+        // Disable transition on initial load (prevents flash)
+        main.style.transition = 'grid-template-columns 0.28s cubic-bezier(0.4,0,0.2,1)';
+        requestAnimationFrame(() => {
+            main.style.transition = '';
+        });
 
         function setStatus(txt, cls) {
             statusEl.textContent = '● ' + txt;
@@ -14768,7 +14783,7 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
             if (pyLoading) return false;
             pyLoading = true;
             setStatus('Lädt…', 'loading');
-            runFileBtn.disabled = true; pkgBtn.disabled = true;
+            runBtn.disabled = true; pkgBtn.disabled = true;
             appendLine('⏳ Python (Pyodide) wird geladen, bitte warten…', 'py-info-line');
             try {
                 await new Promise((res, rej) => {
@@ -14786,7 +14801,7 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                 await pyodide.loadPackage('micropip');
                 setStatus('Bereit', 'ready');
                 appendLine('✓ Python bereit. Pakete über den "Pakete"-Tab installieren.', 'py-info-line');
-                runFileBtn.disabled = false; pkgBtn.disabled = false;
+                runBtn.disabled = false; pkgBtn.disabled = false;
                 return true;
             } catch (e) {
                 setStatus('Fehler', 'error');
@@ -14807,22 +14822,10 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
             }
         }
 
-        // Toggle terminal
-        actBtn.addEventListener('click', () => {
-            const hidden = termPanel.classList.contains('hidden');
-            termPanel.classList.toggle('hidden', !hidden);
-            actBtn.classList.toggle('active', hidden);
-            if (hidden && !pyodide && !pyLoading) ensurePyodide();
-        });
-
-        btnClose.addEventListener('click', () => {
-            termPanel.classList.add('hidden');
-            actBtn.classList.remove('active');
-        });
-
+        actBtn.addEventListener('click', () => { termOpen ? closeTerm() : openTerm(); });
+        btnClose.addEventListener('click', closeTerm);
         btnClear.addEventListener('click', () => { outEl.innerHTML = ''; });
 
-        // Tabs
         tabTerm.addEventListener('click', () => {
             tabTerm.classList.add('active'); tabPkg.classList.remove('active');
             panelTerm.classList.remove('hidden'); panelPkg.classList.add('hidden');
@@ -14833,25 +14836,23 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
             if (!pyodide && !pyLoading) ensurePyodide();
         });
 
-        // REPL
         replInput.addEventListener('keydown', async e => {
             if (e.key === 'Enter') {
                 const code = replInput.value.trim(); if (!code) return;
-                history.unshift(code); histIdx = -1;
+                hist.unshift(code); histIdx = -1;
                 appendLine('>>> ' + code, 'py-info-line');
                 replInput.value = '';
                 await runCode(code);
             } else if (e.key === 'ArrowUp') {
-                if (histIdx < history.length - 1) histIdx++;
-                replInput.value = history[histIdx] || ''; e.preventDefault();
+                if (histIdx < hist.length - 1) histIdx++;
+                replInput.value = hist[histIdx] || ''; e.preventDefault();
             } else if (e.key === 'ArrowDown') {
                 histIdx = histIdx > 0 ? histIdx - 1 : -1;
-                replInput.value = histIdx >= 0 ? history[histIdx] : ''; e.preventDefault();
+                replInput.value = histIdx >= 0 ? hist[histIdx] : ''; e.preventDefault();
             }
         });
 
-        // Run current .py file
-        runFileBtn.addEventListener('click', async () => {
+        runBtn.addEventListener('click', async () => {
             const tab = typeof activeTab !== 'undefined' ? activeTab : null;
             if (!tab || typeof files === 'undefined' || !(tab in files)) {
                 appendLine('⚠ Keine Datei geöffnet.', 'py-warn-line'); return;
@@ -14860,12 +14861,11 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                 appendLine('⚠ Aktuelle Datei ist kein Python-Skript (.py).', 'py-warn-line'); return;
             }
             appendLine('▶ ' + tab, 'py-info-line');
-            runFileBtn.disabled = true;
+            runBtn.disabled = true;
             await runCode(files[tab]);
-            runFileBtn.disabled = false;
+            runBtn.disabled = false;
         });
 
-        // Package install
         pkgBtn.addEventListener('click', async () => {
             const pkg = pkgInput.value.trim(); if (!pkg) return;
             if (!(await ensurePyodide())) return;
@@ -14883,37 +14883,22 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
         });
         pkgInput.addEventListener('keydown', e => { if (e.key === 'Enter') pkgBtn.click(); });
 
-        // ---- Draggable ----
-        let drag = false, dx0, dy0, left0, top0;
-        document.getElementById('py-term-drag').addEventListener('mousedown', e => {
-            if (e.target.closest('button,input')) return;
-            drag = true;
-            const r = termPanel.getBoundingClientRect();
-            dx0 = e.clientX; dy0 = e.clientY; left0 = r.left; top0 = r.top;
-            termPanel.style.right = 'auto'; termPanel.style.bottom = 'auto';
-            termPanel.style.left = left0 + 'px'; termPanel.style.top = top0 + 'px';
+        // ---- Resize by dragging top strip ----
+        let res = false, ry0, rh0;
+        document.getElementById('py-term-resizer').addEventListener('mousedown', e => {
+            res = true; ry0 = e.clientY; rh0 = termPanel.offsetHeight;
             e.preventDefault();
         });
         document.addEventListener('mousemove', e => {
-            if (!drag) return;
-            termPanel.style.left = Math.max(0, left0 + e.clientX - dx0) + 'px';
-            termPanel.style.top  = Math.max(0, top0  + e.clientY - dy0) + 'px';
-        });
-        document.addEventListener('mouseup', () => { if (drag) { drag = false; savePos(); } });
-
-        // ---- Resizable ----
-        let res = false, rx0, ry0, rw0, rh0;
-        document.getElementById('py-resize').addEventListener('mousedown', e => {
-            res = true; rx0 = e.clientX; ry0 = e.clientY;
-            rw0 = termPanel.offsetWidth; rh0 = termPanel.offsetHeight;
-            e.preventDefault(); e.stopPropagation();
-        });
-        document.addEventListener('mousemove', e => {
             if (!res) return;
-            termPanel.style.width  = Math.max(300, rw0 + e.clientX - rx0) + 'px';
-            termPanel.style.height = Math.max(150, rh0 + e.clientY - ry0) + 'px';
+            const newH = Math.max(80, rh0 - (e.clientY - ry0));
+            main.style.setProperty('--row-term', newH + 'px');
         });
-        document.addEventListener('mouseup', () => { if (res) { res = false; savePos(); } });
+        document.addEventListener('mouseup', () => {
+            if (!res) return;
+            res = false;
+            saveH(termPanel.offsetHeight);
+        });
     })();
     </script>
 
