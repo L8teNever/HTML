@@ -8237,49 +8237,115 @@ console.log('App geladen ✨');
             monaco.languages.registerInlineCompletionsProvider('css', makeInlineProvider('css'));
             monaco.languages.registerInlineCompletionsProvider('javascript', makeInlineProvider('javascript'));
 
-            /* ---------- Closing tag auto-complete (</… → </tagname>) ---------- */
+            /* ---------- Closing tag auto-complete – vollständig neu ---------- */
+
+            // Stack-basierter Parser: erkennt auch unvollständige Tags (<div ohne >)
             function findUnclosedTag(model, position) {
-                // Collect all text up to cursor as one string
-                const voids = new Set(['img','br','hr','input','meta','link','source','track','wbr','col','area','embed','base','param','keygen','command']);
+                const VOIDS = new Set(['img','br','hr','input','meta','link','source','track','wbr','col','area','embed','base','param','keygen','command']);
+
+                // Gesamten Text bis zum Cursor sammeln
                 let text = '';
                 for (let ln = 1; ln < position.lineNumber; ln++) {
                     text += model.getLineContent(ln) + '\n';
                 }
                 text += model.getLineContent(position.lineNumber).slice(0, position.column - 1);
 
-                // Simple stack-based parser: match <tag …> and </tag>
                 const stack = [];
-                const openRe = /<([a-zA-Z][a-zA-Z0-9-]*)(?:\s[^>]*)?\s*\/?>/g;
-                const closeRe = /<\/([a-zA-Z][a-zA-Z0-9-]*)\s*>/g;
+                let i = 0;
 
-                // Parse all tokens in order
-                const tokens = [];
-                let m;
-                openRe.lastIndex = 0;
-                while ((m = openRe.exec(text)) !== null) {
-                    const tag = m[1].toLowerCase();
-                    // self-closing or void: skip
-                    if (voids.has(tag) || m[0].endsWith('/>')) continue;
-                    tokens.push({ type: 'open', tag, idx: m.index });
-                }
-                closeRe.lastIndex = 0;
-                while ((m = closeRe.exec(text)) !== null) {
-                    tokens.push({ type: 'close', tag: m[1].toLowerCase(), idx: m.index });
-                }
-                tokens.sort((a, b) => a.idx - b.idx);
+                while (i < text.length) {
+                    if (text[i] !== '<') { i++; continue; }
 
-                for (const tok of tokens) {
-                    if (tok.type === 'open') {
-                        stack.push(tok.tag);
-                    } else {
-                        // pop matching tag from top
-                        for (let i = stack.length - 1; i >= 0; i--) {
-                            if (stack[i] === tok.tag) { stack.splice(i, 1); break; }
-                        }
+                    // HTML-Kommentar überspringen
+                    if (text.startsWith('<!--', i)) {
+                        const end = text.indexOf('-->', i + 4);
+                        i = end === -1 ? text.length : end + 3;
+                        continue;
                     }
+
+                    // Schließ-Tag </tag>
+                    if (text[i + 1] === '/') {
+                        const cm = text.slice(i).match(/^<\/([a-zA-Z][a-zA-Z0-9-]*)\s*>/);
+                        if (cm) {
+                            const tag = cm[1].toLowerCase();
+                            for (let j = stack.length - 1; j >= 0; j--) {
+                                if (stack[j] === tag) { stack.splice(j, 1); break; }
+                            }
+                            i += cm[0].length;
+                        } else {
+                            i++; // unvollständiges </  → ignorieren
+                        }
+                        continue;
+                    }
+
+                    // VOLLSTÄNDIGER öffnender Tag <tag attrs?>
+                    const fullOpen = text.slice(i).match(/^<([a-zA-Z][a-zA-Z0-9-]*)(\s(?:[^"'>]|"[^"]*"|'[^']*')*)?(\s*\/?)>/);
+                    if (fullOpen) {
+                        const tag = fullOpen[1].toLowerCase();
+                        const selfClose = fullOpen[3] && fullOpen[3].includes('/');
+                        if (!VOIDS.has(tag) && !selfClose) stack.push(tag);
+                        i += fullOpen[0].length;
+                        continue;
+                    }
+
+                    // UNVOLLSTÄNDIGER öffnender Tag <tag... (kein > gefunden — Cursor ist mittendrin)
+                    // Nur gültig am Ende des Textes
+                    const incompleteOpen = text.slice(i).match(/^<([a-zA-Z][a-zA-Z0-9-]*)(\s[^<]*)?$/);
+                    if (incompleteOpen) {
+                        const tag = incompleteOpen[1].toLowerCase();
+                        if (!VOIDS.has(tag)) stack.push(tag);
+                        break; // Ende des Textes
+                    }
+
+                    i++;
                 }
-                // Return the innermost unclosed tag
+
                 return stack.length > 0 ? stack[stack.length - 1] : null;
+            }
+
+            // Gibt alle noch-offenen Tags zurück (für die Fallback-Liste)
+            function getOpenTagsInScope(model, position) {
+                const VOIDS = new Set(['img','br','hr','input','meta','link','source','track','wbr','col','area','embed','base','param','keygen','command']);
+                let text = '';
+                for (let ln = 1; ln < position.lineNumber; ln++) {
+                    text += model.getLineContent(ln) + '\n';
+                }
+                text += model.getLineContent(position.lineNumber).slice(0, position.column - 1);
+
+                const stack = [];
+                let i = 0;
+                while (i < text.length) {
+                    if (text[i] !== '<') { i++; continue; }
+                    if (text.startsWith('<!--', i)) {
+                        const end = text.indexOf('-->', i + 4);
+                        i = end === -1 ? text.length : end + 3;
+                        continue;
+                    }
+                    if (text[i + 1] === '/') {
+                        const cm = text.slice(i).match(/^<\/([a-zA-Z][a-zA-Z0-9-]*)\s*>/);
+                        if (cm) {
+                            const tag = cm[1].toLowerCase();
+                            for (let j = stack.length - 1; j >= 0; j--) {
+                                if (stack[j] === tag) { stack.splice(j, 1); break; }
+                            }
+                            i += cm[0].length;
+                        } else { i++; }
+                        continue;
+                    }
+                    const fullOpen = text.slice(i).match(/^<([a-zA-Z][a-zA-Z0-9-]*)(\s(?:[^"'>]|"[^"]*"|'[^']*')*)?(\s*\/?)>/);
+                    if (fullOpen) {
+                        const tag = fullOpen[1].toLowerCase();
+                        if (!VOIDS.has(tag) && !(fullOpen[3] && fullOpen[3].includes('/'))) stack.push(tag);
+                        i += fullOpen[0].length;
+                        continue;
+                    }
+                    const inc = text.slice(i).match(/^<([a-zA-Z][a-zA-Z0-9-]*)(\s[^<]*)?$/);
+                    if (inc) { const tag = inc[1].toLowerCase(); if (!VOIDS.has(tag)) stack.push(tag); break; }
+                    i++;
+                }
+                // Deduplizieren, innerste Tags zuerst
+                const seen = new Set();
+                return stack.reverse().filter(t => { if (seen.has(t)) return false; seen.add(t); return true; });
             }
 
             monaco.languages.registerCompletionItemProvider('html', {
@@ -8288,44 +8354,64 @@ console.log('App geladen ✨');
                     const line = model.getLineContent(position.lineNumber);
                     const before = line.slice(0, position.column - 1);
 
-                    // Only fire when user typed `</` or `</partial`
+                    // Nur feuern wenn `</` oder `</partial` am Zeilenende
                     const closeMatch = before.match(/<\/([a-zA-Z0-9-]*)$/);
                     if (!closeMatch) return { suggestions: [] };
 
                     const typed = closeMatch[1].toLowerCase();
+                    // Range ersetzt `</` + schon getippten Tagnamen vollständig
                     const startCol = position.column - closeMatch[0].length;
+                    const range = new monaco.Range(position.lineNumber, startCol, position.lineNumber, position.column);
 
-                    // Find unclosed tag and build suggestion list
-                    // Also collect all unique open tags in document for secondary suggestions
                     const primary = findUnclosedTag(model, position);
                     const suggestions = [];
 
+                    // ── Primärvorschlag: innerster offener Tag ──────────────────
                     if (primary && (!typed || primary.startsWith(typed))) {
                         suggestions.push({
-                            label: `</${primary}>`,
+                            label: { label: `</${primary}>`, description: '← schließen' },
                             kind: monaco.languages.CompletionItemKind.Snippet,
                             insertText: `</${primary}>`,
-                            detail: '⬆ Nächster offener Tag',
-                            sortText: '0',
-                            range: new monaco.Range(position.lineNumber, startCol, position.lineNumber, position.column),
+                            detail: `</${primary}>  ← nächster offener Tag`,
+                            documentation: { value: `Schließt den zuletzt geöffneten \`<${primary}>\` Tag.` },
+                            sortText: '!!0',   // ganz oben
+                            filterText: `</${primary}>`,
                             preselect: true,
+                            range,
                         });
                     }
 
-                    // Also add all known HTML tags as fallback (filtered by typed prefix)
-                    const ALL_CLOSE_TAGS = ['html','head','body','div','span','p','a','section','article','header','footer','nav','main','aside','ul','ol','li','h1','h2','h3','h4','h5','h6','button','form','label','select','option','textarea','table','thead','tbody','tr','th','td','script','style','title','pre','code','blockquote','figure','figcaption','strong','em','b','i','u','small','details','summary','dialog','template','slot','picture','video','audio','canvas','svg','iframe','noscript','time','mark','sub','sup','cite','abbr','address','caption','col','colgroup','datalist','fieldset','legend','optgroup','output','progress','meter','ruby','rt','rp','wbr','s','del','ins','dfn','kbd','samp','var','data','object','dd','dl','dt'];
-                    ALL_CLOSE_TAGS.forEach((tag, i) => {
-                        if (tag === primary) return; // already added
+                    // ── Weitere offene Tags im Scope ──────────────────────────
+                    const openTags = getOpenTagsInScope(model, position);
+                    openTags.forEach((tag, idx) => {
+                        if (tag === primary) return;
                         if (typed && !tag.startsWith(typed)) return;
                         suggestions.push({
                             label: `</${tag}>`,
                             kind: monaco.languages.CompletionItemKind.Keyword,
                             insertText: `</${tag}>`,
-                            detail: 'HTML schließen',
-                            sortText: '1_' + String(i).padStart(3, '0'),
-                            range: new monaco.Range(position.lineNumber, startCol, position.lineNumber, position.column),
+                            detail: 'offener Eltern-Tag',
+                            sortText: '!!1_' + String(idx).padStart(3, '0'),
+                            range,
                         });
                     });
+
+                    // ── Fallback: alle HTML-Tags (nur wenn getippt und kein primary) ──
+                    if (!primary || typed) {
+                        const ALL_CLOSE = ['div','span','p','a','section','article','header','footer','nav','main','aside','ul','ol','li','h1','h2','h3','h4','h5','h6','button','form','label','select','option','textarea','table','thead','tbody','tr','th','td','script','style','title','pre','code','blockquote','figure','figcaption','strong','em','b','i','u','small','details','summary','dialog','video','audio','canvas','svg','iframe','time','mark','sub','sup'];
+                        ALL_CLOSE.forEach((tag, idx) => {
+                            if (tag === primary || openTags.includes(tag)) return;
+                            if (typed && !tag.startsWith(typed)) return;
+                            suggestions.push({
+                                label: `</${tag}>`,
+                                kind: monaco.languages.CompletionItemKind.Text,
+                                insertText: `</${tag}>`,
+                                detail: 'HTML-Tag',
+                                sortText: '!!2_' + String(idx).padStart(3, '0'),
+                                range,
+                            });
+                        });
+                    }
 
                     return { suggestions };
                 }
