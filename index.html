@@ -7202,21 +7202,17 @@ console.log('App geladen ✨');
             /* ---------- Snippet completions (HTML / CSS / JS) ---------- */
             function makeSnippetProvider(language, list) {
                 return {
-                    // trigger on most chars so they pop up while typing
                     provideCompletionItems: (model, position) => {
                         const line = model.getLineContent(position.lineNumber);
                         const before = line.slice(0, position.column - 1);
 
-                        // For CSS: never show snippets when we are in a value context
-                        // (i.e. the line contains "property:" before the cursor)
-                        if (language === 'css') {
-                            // If there's a colon before the cursor (value position), suppress snippets
-                            if (/^\s*[\w-]+\s*:/.test(before)) return { suggestions: [] };
-                            // Also suppress when we're typing a property and NOT at line start
-                            // (could be a selector like `button:hover`) — only suppress clear value lines
-                        }
+                        // For CSS: never show snippets in value context
+                        if (language === 'css' && /^\s*[\w-]+\s*:/.test(before)) return { suggestions: [] };
 
                         const word = model.getWordUntilPosition(position);
+                        // Only show snippets when user has typed at least 1 character of the snippet name
+                        if (!word.word) return { suggestions: [] };
+
                         const charBefore = word.startColumn > 1 ? model.getValueInRange(new monaco.Range(
                             position.lineNumber, word.startColumn - 1,
                             position.lineNumber, word.startColumn
@@ -7818,33 +7814,8 @@ console.log('App geladen ✨');
                         };
                     }
 
-                    // Unknown variable → offer all instance method groups combined
-                    const combined = [];
-                    ALL_INSTANCE_GROUPS.forEach(grpKey => {
-                        (JS_DOT_COMPLETIONS[grpKey] || []).forEach(([label, detail, insertText], i) => {
-                            combined.push({
-                                label,
-                                kind: typeof insertText === 'string' && !insertText.includes('(')
-                                    ? monaco.languages.CompletionItemKind.Field
-                                    : monaco.languages.CompletionItemKind.Method,
-                                insertText,
-                                insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                                detail,
-                                sortText: grpKey + '_' + String(i).padStart(4, '0'),
-                                range,
-                            });
-                        });
-                    });
-
-                    // Deduplicate by label (prefer first seen)
-                    const seen = new Set();
-                    const deduped = combined.filter(s => {
-                        if (seen.has(s.label)) return false;
-                        seen.add(s.label);
-                        return true;
-                    });
-
-                    return { suggestions: deduped };
+                    // Unbekannte Variable → Monaco's TS-Service (DOM lib) übernimmt das
+                    return { suggestions: [] };
                 }
             });
 
@@ -7954,11 +7925,13 @@ console.log('App geladen ✨');
             };
 
             monaco.languages.registerCompletionItemProvider('css', {
-                triggerCharacters: [' ', ':', '-', 'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'],
+                triggerCharacters: [':', '-'],
                 provideCompletionItems: (model, position) => {
                     const line = model.getLineContent(position.lineNumber);
                     const before = line.slice(0, position.column - 1);
                     const word = model.getWordUntilPosition(position);
+                    // Nur feuern wenn getippt wurde
+                    if (!word.word && !before.trimEnd().endsWith(':')) return { suggestions: [] };
                     const range = new monaco.Range(
                         position.lineNumber, word.startColumn,
                         position.lineNumber, word.endColumn
@@ -8970,17 +8943,17 @@ console.log('App geladen ✨');
                     autoSurround: 'languageDefined',
                     autoIndent: 'full',
                     suggestOnTriggerCharacters: true,
-                    quickSuggestions: { other: true, comments: false, strings: true },
-                    quickSuggestionsDelay: 0,
+                    quickSuggestions: { other: true, comments: false, strings: false },
+                    quickSuggestionsDelay: 10,
                     acceptSuggestionOnEnter: 'on',
                     tabCompletion: 'on',
                     suggestSelection: 'first',
-                    wordBasedSuggestions: 'allDocuments',
+                    wordBasedSuggestions: 'off',
                     inlineSuggest: { enabled: true, mode: 'prefix', showToolbar: 'onHover' },
                     suggest: {
                         preview: true,
                         showSnippets: true,
-                        showWords: true,
+                        showWords: false,
                         showMethods: true,
                         showFunctions: true,
                         showConstructors: true,
@@ -8998,9 +8971,9 @@ console.log('App geladen ✨');
                         showEnumMembers: true,
                         showKeywords: true,
                         showTypeParameters: true,
-                        showIssues: true,
-                        showUsers: true,
-                        showFolders: true,
+                        showIssues: false,
+                        showUsers: false,
+                        showFolders: false,
                         showFiles: true,
                         showReferences: true,
                         showColors: true,
