@@ -7159,6 +7159,15 @@ console.log('App geladen ✨');
                         const idx = path.lastIndexOf('/');
                         return idx === -1 ? '' : path.slice(0, idx);
                     };
+                    const getRelativePath = (fromFolder, toPath) => {
+                        const from = fromFolder ? fromFolder.split('/') : [];
+                        const parts = toPath.split('/');
+                        const toFile = parts.pop();
+                        const toDir = parts;
+                        let common = 0;
+                        while (common < from.length && common < toDir.length && from[common] === toDir[common]) common++;
+                        return [...Array(from.length - common).fill('..'), ...toDir.slice(common), toFile].join('/');
+                    };
                     const currentFolder = getParentFolder(activeTab || '');
 
                     const suggestions = Object.keys(files)
@@ -7178,11 +7187,12 @@ console.log('App geladen ✨');
                                 priority = '3';
                             }
 
+                            const relPath = getRelativePath(currentFolder, n);
                             return {
-                                label: n,
+                                label: relPath,
                                 kind: monaco.languages.CompletionItemKind.File,
-                                insertText: n,
-                                detail: 'Projektdatei',
+                                insertText: relPath,
+                                detail: n,
                                 sortText: priority + '_' + n,
                                 range: new monaco.Range(
                                     position.lineNumber,
@@ -8129,7 +8139,23 @@ console.log('App geladen ✨');
                         source: '<source src="${1:src}" type="${2:video/mp4}" />$0'
                     };
 
-                    const suggestions = ALL_HTML_TAGS.map(tag => {
+                    const closeSuggForLt = [];
+                    const unclosedForLt = findUnclosedTag(model, position);
+                    if (unclosedForLt && (!typed || unclosedForLt.startsWith(typed))) {
+                        closeSuggForLt.push({
+                            label: { label: `</${unclosedForLt}>`, description: '← schließen' },
+                            kind: monaco.languages.CompletionItemKind.Snippet,
+                            insertText: `</${unclosedForLt}>`,
+                            detail: `</${unclosedForLt}>  ← nächster offener Tag`,
+                            documentation: { value: `Schließt den zuletzt geöffneten \`<${unclosedForLt}>\` Tag.` },
+                            sortText: '!!!0',
+                            filterText: unclosedForLt,
+                            preselect: true,
+                            range,
+                        });
+                    }
+
+                    const suggestions = [...closeSuggForLt, ...ALL_HTML_TAGS.map(tag => {
                         let insertText = '';
                         if (tag in voidTags) {
                             insertText = voidTags[tag];
@@ -8164,7 +8190,7 @@ console.log('App geladen ✨');
                             range: range,
                             sortText: priority + '_' + tag
                         };
-                    });
+                    })];
 
                     return { suggestions };
                 }
