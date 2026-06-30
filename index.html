@@ -5653,6 +5653,8 @@
         <div class="ctx-divider ctx-advanced"></div>
         <div class="ctx-item ctx-advanced" id="ectx-command"><span class="ctx-label"
                 id="ectx-command-lbl">Befehlspalette</span><span class="ctx-shortcut">F1</span></div>
+        <div class="ctx-divider"></div>
+        <div class="ctx-item" id="ectx-open-tab"><span class="ctx-label" id="ectx-open-tab-lbl">In neuem Browser-Tab öffnen</span></div>
     </div>
 
     <!-- ====================================================================== -->
@@ -9076,6 +9078,15 @@ console.log('App geladen ✨');
                 document.getElementById('ectx-copy').addEventListener('click', () => editorAction('editor.action.clipboardCopyAction'));
                 document.getElementById('ectx-paste').addEventListener('click', () => editorAction('editor.action.clipboardPasteAction'));
                 document.getElementById('ectx-command').addEventListener('click', () => editorAction('editor.action.quickCommand'));
+                document.getElementById('ectx-open-tab').addEventListener('click', () => {
+                    hideEditorCtx();
+                    const path = activeTab && activeTab in files ? activeTab : (currentPreviewPath in files ? currentPreviewPath : entryFile);
+                    const html = buildPreviewDocument(path);
+                    const blob = new Blob([html], { type: 'text/html' });
+                    const url = URL.createObjectURL(blob);
+                    const w = window.open(url, '_blank');
+                    if (w) blobWindows.push({ win: w, url, filePath: path });
+                });
                 // Ctrl+Click / Cmd+Click navigation
                 editor.onMouseDown((e) => {
                     if ((e.event.ctrlKey || e.event.metaKey) && e.target.type === monaco.editor.MouseTargetType.CONTENT_TEXT) {
@@ -9162,7 +9173,8 @@ console.log('App geladen ✨');
                         URL.revokeObjectURL(item.url);
                         return false;
                     }
-                    const newBlob = new Blob([html], { type: 'text/html' });
+                    const winHtml = item.filePath && item.filePath in files ? buildPreviewDocument(item.filePath) : html;
+                    const newBlob = new Blob([winHtml], { type: 'text/html' });
                     const newUrl = URL.createObjectURL(newBlob);
                     URL.revokeObjectURL(item.url);
                     item.win.location.replace(newUrl);
@@ -10142,6 +10154,7 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
                         const newUrl = URL.createObjectURL(newBlob);
                         URL.revokeObjectURL(blobItem.url);
                         blobItem.url = newUrl;
+                        blobItem.filePath = d.target;
                         blobItem.win.location.replace(newUrl);
                     } catch (err) {
                         console.error('blob navigate failed', err);
@@ -10293,7 +10306,7 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
             const url = URL.createObjectURL(blob);
             const w = window.open(url, '_blank');
             if (w) {
-                blobWindows.push({ win: w, url: url });
+                blobWindows.push({ win: w, url: url, filePath: path });
             }
         });
 
