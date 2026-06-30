@@ -104,18 +104,20 @@
 
         /* ============================ APP SHELL ============================ */
         .app {
+            --row-term: 0px;
             display: grid;
             grid-template-columns: 48px 1fr;
-            grid-template-rows: 1fr 22px;
+            grid-template-rows: 1fr var(--row-term) 22px;
             height: 100vh;
             height: 100dvh;
             overscroll-behavior: none;
+            transition: grid-template-rows 0.18s ease;
         }
 
         /* ---- Activity Bar (VS Code left icon rail) ---- */
         .activity-bar {
             grid-column: 1;
-            grid-row: 1;
+            grid-row: 1 / 3;
             background: var(--bg-activity, #333333);
             display: flex;
             flex-direction: column;
@@ -308,16 +310,20 @@
             --col-sidebar: 220px;
             --col-editor: 1fr;
             --col-preview: 1fr;
-            --row-term: 0px;
             grid-column: 2;
             grid-row: 1;
             display: grid;
             grid-template-columns: var(--col-sidebar) 6px var(--col-editor) 6px var(--col-preview);
-            grid-template-rows: 1fr var(--row-term);
             min-height: 0;
             overflow: hidden;
-            transition: grid-template-columns 0.28s cubic-bezier(0.4, 0, 0.2, 1),
-                        grid-template-rows 0.18s ease;
+            transition: grid-template-columns 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        /* Terminal docked panel — sits in app-grid row 2, column 2 */
+        #py-terminal {
+            grid-column: 2;
+            grid-row: 2;
+            min-height: 0;
+            overflow: hidden;
         }
 
         body.resizing .main {
@@ -1476,7 +1482,7 @@
         /* ---------- Status bar ---------- */
         .statusbar {
             grid-column: 1 / -1;
-            grid-row: 2;
+            grid-row: 3;
             background: var(--bg-1);
             border-top: 1px solid var(--line-2);
             display: flex;
@@ -4605,37 +4611,38 @@
                 </div>
             </section>
 
-            <!-- ========== PYTHON TERMINAL (docked bottom) ========== -->
-            <div id="py-terminal" class="py-terminal">
-                <div class="py-term-resizer" id="py-term-resizer"></div>
-                <div class="py-terminal-header" id="py-term-drag">
-                    <div class="py-term-tabs">
-                        <button class="py-tab active" id="py-tab-term">Terminal</button>
-                        <button class="py-tab" id="py-tab-pkg">Pakete</button>
-                    </div>
-                    <div class="py-term-actions">
-                        <span id="py-status" class="py-status" title="Python Status">● Nicht geladen</span>
-                        <button class="py-term-btn" id="py-term-clear" title="Ausgabe leeren">⌫</button>
-                        <button class="py-term-btn" id="py-term-close" title="Schließen">✕</button>
-                    </div>
+        </main>
+
+        <!-- ========== PYTHON TERMINAL (app-grid row 2) ========== -->
+        <div id="py-terminal" class="py-terminal">
+            <div class="py-term-resizer" id="py-term-resizer"></div>
+            <div class="py-terminal-header" id="py-term-drag">
+                <div class="py-term-tabs">
+                    <button class="py-tab active" id="py-tab-term">Terminal</button>
+                    <button class="py-tab" id="py-tab-pkg">Pakete</button>
                 </div>
-                <div id="py-panel-term" class="py-panel">
-                    <div id="py-output" class="py-output"></div>
-                    <div class="py-input-row">
-                        <span class="py-prompt">&gt;&gt;&gt;</span>
-                        <input id="py-repl" class="py-repl-input" type="text" placeholder="Python eingeben…" spellcheck="false" autocomplete="off" />
-                        <button id="py-run-file" class="py-run-btn" disabled>▶ Datei ausführen</button>
-                    </div>
-                </div>
-                <div id="py-panel-pkg" class="py-panel hidden">
-                    <div class="py-pkg-row">
-                        <input id="py-pkg-input" class="py-pkg-input" type="text" placeholder="Paketname, z.B. numpy" spellcheck="false" autocomplete="off" />
-                        <button id="py-pkg-install" class="py-pkg-btn">📦 Installieren</button>
-                    </div>
-                    <div id="py-pkg-output" class="py-output"></div>
+                <div class="py-term-actions">
+                    <span id="py-status" class="py-status" title="Python Status">● Nicht geladen</span>
+                    <button class="py-term-btn" id="py-term-clear" title="Ausgabe leeren">⌫</button>
+                    <button class="py-term-btn" id="py-term-close" title="Schließen">✕</button>
                 </div>
             </div>
-        </main>
+            <div id="py-panel-term" class="py-panel">
+                <div id="py-output" class="py-output"></div>
+                <div class="py-input-row">
+                    <span class="py-prompt">&gt;&gt;&gt;</span>
+                    <input id="py-repl" class="py-repl-input" type="text" placeholder="Python eingeben…" spellcheck="false" autocomplete="off" />
+                    <button id="py-run-file" class="py-run-btn" disabled>▶ Datei ausführen</button>
+                </div>
+            </div>
+            <div id="py-panel-pkg" class="py-panel hidden">
+                <div class="py-pkg-row">
+                    <input id="py-pkg-input" class="py-pkg-input" type="text" placeholder="Paketname, z.B. numpy" spellcheck="false" autocomplete="off" />
+                    <button id="py-pkg-install" class="py-pkg-btn">📦 Installieren</button>
+                </div>
+                <div id="py-pkg-output" class="py-output"></div>
+            </div>
+        </div>
 
         <!-- ============= STATUSBAR ============= -->
         <footer class="statusbar">
@@ -14717,7 +14724,7 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
     <script>
     /* ==================== PYTHON TERMINAL LOGIC ==================== */
     (function () {
-        const main      = document.getElementById('main');
+        const appEl     = document.querySelector('.app');
         const termPanel = document.getElementById('py-terminal');
         const actBtn    = document.getElementById('act-terminal');
         const btnClose  = document.getElementById('py-term-close');
@@ -14748,21 +14755,19 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
         function openTerm() {
             termOpen = true;
             const h = getSavedH();
-            main.style.setProperty('--row-term', h + 'px');
+            appEl.style.setProperty('--row-term', h + 'px');
             actBtn.classList.add('active');
             if (!pyodide && !pyLoading) ensurePyodide();
         }
         function closeTerm() {
             termOpen = false;
-            main.style.setProperty('--row-term', '0px');
+            appEl.style.setProperty('--row-term', '0px');
             actBtn.classList.remove('active');
         }
 
-        // Disable transition on initial load (prevents flash)
-        main.style.transition = 'grid-template-columns 0.28s cubic-bezier(0.4,0,0.2,1)';
-        requestAnimationFrame(() => {
-            main.style.transition = '';
-        });
+        // Disable transition on initial load
+        appEl.style.transition = 'none';
+        requestAnimationFrame(() => { appEl.style.transition = ''; });
 
         function setStatus(txt, cls) {
             statusEl.textContent = '● ' + txt;
@@ -14892,7 +14897,7 @@ pre{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:13px;line-heig
         document.addEventListener('mousemove', e => {
             if (!res) return;
             const newH = Math.max(80, rh0 - (e.clientY - ry0));
-            main.style.setProperty('--row-term', newH + 'px');
+            appEl.style.setProperty('--row-term', newH + 'px');
         });
         document.addEventListener('mouseup', () => {
             if (!res) return;
